@@ -131,7 +131,7 @@ include_directories(../include)
       opencv_objdetect455d.lib
       opencv_photo455d.lib
       opencv_stitching455d.lib
-
+      
       # release
       openvino.lib
       openvino_c.lib
@@ -168,3 +168,11 @@ include_directories(../include)
 ##  ~~2.vs使用cv::imshow会卡住~~
 
 > 自己莫名其妙好了。。。
+
+
+
+# 第三方库
+
+处理json使用了rapidjson https://rapidjson.org/zh-cn/
+
+opencv方式参考了mmdeploy https://github.com/open-mmlab/mmdeploy/tree/master/csrc/mmdeploy/utils/opencv
