@@ -27,7 +27,7 @@ MetaData getJson(const string& json_path) {
     //    cout << infer_height << endl;
     //    cout << infer_width << endl;
 
-    return MetaData{ image_threshold, pixel_threshold, min, max, infer_height, infer_width };
+    return MetaData {image_threshold, pixel_threshold, min, max, {infer_height, infer_width}};
 }
 
 
@@ -115,7 +115,7 @@ cv::Mat superimposeAnomalyMap(const cv::Mat& anomaly_map, cv::Mat& origin_image)
     anomaly = (anomaly - minValue) / (maxValue - minValue);
 
     //转换为整形
-    cv::normalize(anomaly, anomaly, 0, 255, cv::NormTypes::NORM_MINMAX, CV_8UC1);
+    anomaly.convertTo(anomaly, CV_8UC1, 255, 0);
     //单通道转化为3通道
     cv::applyColorMap(anomaly, anomaly, cv::ColormapTypes::COLORMAP_JET);
     //合并原图和热力图
