@@ -13,69 +13,6 @@ using namespace std;
 
 
 /**
- * get      openvino model
- * @param   超参数
- * @param   model_path
- * @return  CompiledModel
- */
-ov::CompiledModel get_openvino_model(string& model_path, MetaData& meta,  string& device, bool openvino_preprocess=false){
-    vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
-    vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
-
-    // Step 1. Initialize OpenVINO Runtime core
-    ov::Core core;
-    // Step 2. Read a model
-    std::shared_ptr<ov::Model> model = core.read_model(model_path);
-
-    if(openvino_preprocess){
-        // Step 4. Inizialize Preprocessing for the model
-        // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
-        // https://blog.csdn.net/sandmangu/article/details/107181289
-        // https://docs.openvino.ai/latest/openvino_2_0_preprocessing.html
-        ov::preprocess::PrePostProcessor ppp = ov::preprocess::PrePostProcessor(model);
-        // Specify input image format   input(0) refers to the 0th input.
-        ppp.input(0).tensor()
-                .set_element_type(ov::element::f32)                    // u8 -> f32
-                .set_layout(ov::Layout("NCHW"))         // NHWC -> NCHW
-                .set_color_format(ov::preprocess::ColorFormat::RGB);
-        // Specify preprocess pipeline to input image without resizing
-        ppp.input(0).preprocess()
-                .convert_element_type(ov::element::f32)
-                .mean(mean)
-                .scale(std);
-        // Specify model's input layout
-        ppp.input(0).model().set_layout(ov::Layout("NCHW"));
-        // Specify output results format
-        ppp.output(0).tensor().set_element_type(ov::element::f32);
-        ppp.output(1).tensor().set_element_type(ov::element::f32);
-        // Embed above steps in the graph
-        model = ppp.build();
-    }
-
-    ov::CompiledModel compiled_model = core.compile_model(model, device);
-
-    // **模型预热**
-    // 输入数据
-    cv::Size size = cv::Size(meta.infer_size[1], meta.infer_size[0]);
-    cv::Scalar color = cv::Scalar(0, 0, 0);
-    cv::Mat input = cv::Mat(size, CV_32FC3, color);
-    // [H, W, C] -> [N, C, H, W]
-    input = cv::dnn::blobFromImage(input, 1.0,
-                                   {meta.infer_size[1], meta.infer_size[0]},
-                                   {0, 0, 0},
-                                   false, false, CV_32F);
-    auto *input_data = (float *) input.data;
-    ov::Tensor input_tensor = ov::Tensor(compiled_model.input().get_element_type(), compiled_model.input().get_shape(), input_data);
-    // 推理请求
-    ov::InferRequest infer_request = compiled_model.create_infer_request();
-    infer_request.set_input_tensor(input_tensor);
-    infer_request.infer();
-
-    return compiled_model;
-}
-
-
-/**
  * 推理单张图片
  * @param compiled_model    编译后的模型
  * @param infer_request     推理请求
@@ -144,6 +81,61 @@ Result infer(ov::CompiledModel& compiled_model, ov::InferRequest& infer_request,
 
     // 10.返回结果
     return Result {anomaly_map, score};
+}
+
+
+/**
+ * get      openvino model
+ * @param   超参数
+ * @param   model_path
+ * @return  CompiledModel
+ */
+ov::CompiledModel get_openvino_model(string& model_path, MetaData& meta,  string& device, bool openvino_preprocess=false){
+    vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
+    vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
+
+    // Step 1. Initialize OpenVINO Runtime core
+    ov::Core core;
+    // Step 2. Read a model
+    std::shared_ptr<ov::Model> model = core.read_model(model_path);
+
+    if(openvino_preprocess){
+        // Step 4. Inizialize Preprocessing for the model
+        // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
+        // https://blog.csdn.net/sandmangu/article/details/107181289
+        // https://docs.openvino.ai/latest/openvino_2_0_preprocessing.html
+        ov::preprocess::PrePostProcessor ppp = ov::preprocess::PrePostProcessor(model);
+        // Specify input image format   input(0) refers to the 0th input.
+        ppp.input(0).tensor()
+                .set_element_type(ov::element::f32)                    // u8 -> f32
+                .set_layout(ov::Layout("NCHW"))         // NHWC -> NCHW
+                .set_color_format(ov::preprocess::ColorFormat::RGB);
+        // Specify preprocess pipeline to input image without resizing
+        ppp.input(0).preprocess()
+                .convert_element_type(ov::element::f32)
+                .mean(mean)
+                .scale(std);
+        // Specify model's input layout
+        ppp.input(0).model().set_layout(ov::Layout("NCHW"));
+        // Specify output results format
+        ppp.output(0).tensor().set_element_type(ov::element::f32);
+        ppp.output(1).tensor().set_element_type(ov::element::f32);
+        // Embed above steps in the graph
+        model = ppp.build();
+    }
+
+    ov::CompiledModel compiled_model = core.compile_model(model, device);
+
+    // **模型预热**
+    // 输入数据
+    cv::Size size = cv::Size(meta.infer_size[1], meta.infer_size[0]);
+    cv::Scalar color = cv::Scalar(0, 0, 0);
+    cv::Mat input = cv::Mat(size, CV_8UC3, color);
+    // 推理请求
+    ov::InferRequest infer_request = compiled_model.create_infer_request();
+    infer(compiled_model, infer_request, input, meta, openvino_preprocess);
+
+    return compiled_model;
 }
 
 
