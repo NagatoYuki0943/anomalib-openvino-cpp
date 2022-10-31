@@ -17,31 +17,31 @@ using namespace std;
  * @param   model_path
  * @return  CompiledModel
  */
-ov::CompiledModel get_openvino_model(const string& model_path, const string& device = "CPU", bool openvino_preprocess = false) {
-    vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
-    vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
+ov::CompiledModel get_openvino_model(const string& model_path, const string& device="CPU", bool openvino_preprocess=false){
+    vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
+    vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
 
     // Step 1. Initialize OpenVINO Runtime core
     ov::Core core;
     // Step 2. Read a model
     std::shared_ptr<ov::Model> model = core.read_model(model_path);
 
-    if (openvino_preprocess) {
+    if(openvino_preprocess){
         // Step 4. Inizialize Preprocessing for the model
         // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
         // https://blog.csdn.net/sandmangu/article/details/107181289
         // https://docs.openvino.ai/latest/openvino_2_0_preprocessing.html
         ov::preprocess::PrePostProcessor ppp = ov::preprocess::PrePostProcessor(model);
         // Specify input image format   input(0) refers to the 0th input.
-        ppp.input(0).tensor().
-            set_element_type(ov::element::u8).
-            set_layout(ov::Layout("NHWC"))
-            .set_color_format(ov::preprocess::ColorFormat::RGB);
+        ppp.input(0).tensor()
+                .set_element_type(ov::element::u8)
+                .set_layout(ov::Layout("NHWC"))
+                .set_color_format(ov::preprocess::ColorFormat::RGB);
         // Specify preprocess pipeline to input image without resizing
         ppp.input(0).preprocess()
-            .convert_element_type(ov::element::f32)
-            .mean(mean)
-            .scale(std);
+                .convert_element_type(ov::element::f32)
+                .mean(mean)
+                .scale(std);
         // Specify model's input layout
         ppp.input(0).model().set_layout(ov::Layout("NCHW"));
         // Specify output results format
@@ -57,124 +57,100 @@ ov::CompiledModel get_openvino_model(const string& model_path, const string& dev
 
 
 /**
- * Í¼Æ¬Ô¤´¦Àí
- * TODO ÓĞÎÊÌâ,openvinoÍÆÀí½á¹û²»¶Ô
- * @param path	Í¼Æ¬Â·¾¶
- * @param meta  ³¬²ÎÊı,ÕâÀï´æ·ÅÔ­Í¼µÄ¿í¸ß
- * @return x	tensorÀàĞÍµÄÍ¼Æ¬
- */
-cv::Mat preProcess(cv::Mat& image, MetaData& meta) {
-    vector<float> mean = { 0.485, 0.456, 0.406 };
-    vector<float> std = { 0.229, 0.224, 0.225 };
-
-    // Ëõ·Å w h
-    cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
-    //cout << resized_image << endl;
-//    double *maxVal;
-//    double *minVal;
-//    cv::minMaxLoc(resized_image, minVal, maxVal);
-//    cout << *minVal << " " << *maxVal << endl;
-//    cout << cv::mean(resized_image) << endl;    // [138.361, 137.557, 142.034, 0]
-//    cout << resized_image.channels() << endl;     // [138.361, 137.557, 142.034, 0]
-
-    // ¹éÒ»»¯
-    // convertToÖ±½Ó½«ËùÓĞÖµ³ıÒÔ255,normalizeµÄNORM_MINMAXÊÇ½«Ô­Ê¼Êı¾İ·¶Î§±ä»»µ½0~1Ö®¼ä,convertTo¸ü·ûºÏÉî¶ÈÑ§Ï°µÄ×ö·¨
-    resized_image.convertTo(resized_image, CV_32FC3, 1.0 / 255, 0);
-    //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
-    // ±ê×¼»¯
-    resized_image = Normalize(resized_image, mean, std);
-    return resized_image;
-}
-
-
-/**
- * ÍÆÀíµ¥ÕÅÍ¼Æ¬
- * @param compiled_model    ±àÒëºóµÄÄ£ĞÍ
- * @param infer_request     ÍÆÀíÇëÇó
- * @param image             Ô­Ê¼Í¼Æ¬
- * @param meta              ³¬²ÎÊı
- * @param openvino_preprocess ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí,Ä¿Ç°Ö»ÄÜÊ¹ÓÃËüµÄÔ¤´¦Àí,×Ô¼ºĞ´µÄÓĞÎÊÌâ
- * @return                  µş¼ÓÈÈÁ¦Í¼µÄÔ­Í¼ºÍµÃ·Ö
+ * æ¨ç†å•å¼ å›¾ç‰‡
+ * @param compiled_model    ç¼–è¯‘åçš„æ¨¡å‹
+ * @param infer_request     æ¨ç†è¯·æ±‚
+ * @param image             åŸå§‹å›¾ç‰‡
+ * @param meta              è¶…å‚æ•°
+ * @param openvino_preprocess æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†,ç›®å‰åªèƒ½ä½¿ç”¨å®ƒçš„é¢„å¤„ç†,è‡ªå·±å†™çš„æœ‰é—®é¢˜
+ * @return                  å åŠ çƒ­åŠ›å›¾çš„åŸå›¾å’Œå¾—åˆ†
  */
 Result infer(ov::CompiledModel& compiled_model, ov::InferRequest& infer_request,
-    cv::Mat& image, MetaData& meta, bool openvino_preprocess) {
-    // 1.±£´æÍ¼Æ¬Ô­Ê¼¸ß¿í
+             cv::Mat& image, MetaData& meta, bool openvino_preprocess){
+    // 1.ä¿å­˜å›¾ç‰‡åŸå§‹é«˜å®½
     meta.image_size[0] = image.size[0];
     meta.image_size[1] = image.size[1];
 
-    // 2.Í¼Æ¬Ô¤´¦Àí
+    // 2.å›¾ç‰‡é¢„å¤„ç†
     cv::Mat resized_image;
-    if (openvino_preprocess) {
+    if (openvino_preprocess){
+        // [H, W, C]
         resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
-    }
-    else {
+    }else{
         resized_image = preProcess(image, meta);
+        // [H, W, C] -> [N, C, H, W]
+        // è¿™é‡Œåªè½¬æ¢ç»´åº¦,å…¶ä»–é¢„å¤„ç†éƒ½åšäº†,pythonç‰ˆæœ¬æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†éƒ½éœ€è¦è¿™ä¸€æ­¥,C++åªæ˜¯è‡ªå·±çš„é¢„å¤„ç†éœ€è¦è¿™ä¸€æ­¥
+        // openvinoå¦‚æœä½¿ç”¨è¿™ä¸€æ­¥çš„è¯éœ€è¦å°†è¾“å…¥çš„ Layout ç”± NHWC æ”¹ä¸º NCHW  (ç¬¬38è¡Œ)
+        resized_image = cv::dnn::blobFromImage(resized_image, 1.0,
+                                               {meta.infer_size[1], meta.infer_size[0]},
+                                               {0, 0, 0},
+                                               false, false, CV_32F);
     }
-
-    // ÊäÈëÈ«Îª1²âÊÔ
+    // è¾“å…¥å…¨ä¸º1æµ‹è¯•
     // cv::Scalar color = cv::Scalar(1, 1, 1);
     // cv::Size size = cv::Size(224, 224);
-    // image = cv::Mat(size, CV_32FC3, color);
+    // resized_image = cv::Mat(size, CV_32FC3, color);
 
-    // 3.´ÓÍ¼Ïñ´´½¨tensor
-    auto* input_data = (float*)resized_image.data;
+    // 3.ä»å›¾åƒåˆ›å»ºtensor
+    auto *input_data = (float *) resized_image.data;
     ov::Tensor input_tensor = ov::Tensor(compiled_model.input().get_element_type(), compiled_model.input().get_shape(), input_data);
 
-    // 4.ÍÆÀí
+    // 4.æ¨ç†
     infer_request.set_input_tensor(input_tensor);
     infer_request.infer();
 
-    // 5.»ñÈ¡Êä³ö
-    const ov::Tensor& result1 = infer_request.get_output_tensor(0);
-    const ov::Tensor& result2 = infer_request.get_output_tensor(1);
+    // 5.è·å–è¾“å‡º
+    const ov::Tensor &result1 = infer_request.get_output_tensor(0);
+    const ov::Tensor &result2 = infer_request.get_output_tensor(1);
     // cout << result1.get_shape() << endl;    //{1, 1, 224, 224}
     // cout << result2.get_shape() << endl;    //{1}
 
-    // 6.½«Êä³ö×ª»»ÎªMat
-    // result1.data<float>() ·µ»ØÖ¸Õë ·ÅÈëMatÖĞ²»ÄÜ½âÓ¡ÓÃ
+    // 6.å°†è¾“å‡ºè½¬æ¢ä¸ºMat
+    // result1.data<float>() è¿”å›æŒ‡é’ˆ æ”¾å…¥Matä¸­ä¸èƒ½è§£å°ç”¨
     cv::Mat anomaly_map = cv::Mat(cv::Size(meta.infer_size[1], meta.infer_size[0]), CV_32FC1, result1.data<float>());
     cv::Mat pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, result2.data<float>());
     cout << "pred_score: " << pred_score << endl;   // 4.0252275
 
-    // 7.ºó´¦Àí:±ê×¼»¯,Ëõ·Åµ½Ô­Í¼
+    // 7.åå¤„ç†:æ ‡å‡†åŒ–,ç¼©æ”¾åˆ°åŸå›¾
     vector<cv::Mat> result = postProcess(anomaly_map, pred_score, meta);
     anomaly_map = result[0];
     float score = result[1].at<float>(0, 0);
 
-    // 8.µş¼ÓÔ­Í¼ºÍÈÈÁ¦Í¼,´ÓÕâÀï¿ªÊ¼¾ÍÊÇÎªÁËÏÔÊ¾×ö×¼±¸ÁË
+    // 8.å åŠ åŸå›¾å’Œçƒ­åŠ›å›¾,ä»è¿™é‡Œå¼€å§‹å°±æ˜¯ä¸ºäº†æ˜¾ç¤ºåšå‡†å¤‡äº†
     anomaly_map = superimposeAnomalyMap(anomaly_map, image);
 
-    // 9.¸øÍ¼Æ¬Ìí¼Ó·ÖÊı
+    // 9.ç»™å›¾ç‰‡æ·»åŠ åˆ†æ•°
     anomaly_map = addLabel(anomaly_map, score);
 
-    // 10.·µ»Ø½á¹û
-    return Result{ anomaly_map, score };
+    // 10.è¿”å›ç»“æœ
+    return Result {anomaly_map, score};
 }
 
 
 /**
- * µ¥ÕÅÍ¼Æ¬ÍÆÀí
- * @param model_path    Ä£ĞÍÂ·¾¶
- * @param meta_path     ³¬²ÎÊıÂ·¾¶
- * @param image_path    Í¼Æ¬Â·¾¶
- * @param save_dir      ±£´æÂ·¾¶
- * @param openvino_preprocess   ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
+ * å•å¼ å›¾ç‰‡æ¨ç†
+ * @param model_path    æ¨¡å‹è·¯å¾„
+ * @param meta_path     è¶…å‚æ•°è·¯å¾„
+ * @param image_path    å›¾ç‰‡è·¯å¾„
+ * @param save_dir      ä¿å­˜è·¯å¾„
+ * @param device        CPU or GPU æ¨ç†
+ * @param openvino_preprocess   æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
  */
-void single(string& model_path, string& meta_path, string& image_path, string& save_dir, bool openvino_preprocess = true) {
-    // 1.¶ÁÈ¡meta
+void single(string& model_path, string& meta_path, string& image_path, string& save_dir, string& device, bool openvino_preprocess = true){
+    // 1.è¯»å–meta
     MetaData meta = getJson(meta_path);
 
-    // 2.»ñÈ¡Ä£ĞÍ
-    ov::CompiledModel compiled_model = get_openvino_model(model_path, "CPU", openvino_preprocess);
+    // 2.è·å–æ¨¡å‹
+    ov::CompiledModel compiled_model = get_openvino_model(model_path, device, openvino_preprocess);
     ov::InferRequest infer_request = compiled_model.create_infer_request();
 
-    // 3.¶ÁÈ¡Í¼Æ¬
+    // 3.è¯»å–å›¾ç‰‡
     cv::Mat image = readImage(image_path);
 
-    // 4.ÍÆÀíµ¥ÕÅÍ¼Æ¬
+    // 4.æ¨ç†å•å¼ å›¾ç‰‡
     Result result = infer(compiled_model, infer_request, image, meta, openvino_preprocess);
 
-    // 5.±£´æÏÔÊ¾Í¼Æ¬
+    // 5.ä¿å­˜æ˜¾ç¤ºå›¾ç‰‡
     cout << "score: " << result.score << endl;
     saveScoreAndImage(result.score, result.anomaly_map, image_path, save_dir);
     cv::imshow("result", result.anomaly_map);
@@ -183,58 +159,60 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
 
 
 /**
- * ¶àÕÅÍ¼Æ¬ÍÆÀí
- * @param model_path    Ä£ĞÍÂ·¾¶
- * @param meta_path     ³¬²ÎÊıÂ·¾¶
- * @param image_dir     Í¼Æ¬ÎÄ¼ş¼ĞÂ·¾¶
- * @param save_dir      ±£´æÂ·¾¶
- * @param openvino_preprocess   ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
+ * å¤šå¼ å›¾ç‰‡æ¨ç†
+ * @param model_path    æ¨¡å‹è·¯å¾„
+ * @param meta_path     è¶…å‚æ•°è·¯å¾„
+ * @param image_dir     å›¾ç‰‡æ–‡ä»¶å¤¹è·¯å¾„
+ * @param save_dir      ä¿å­˜è·¯å¾„
+ * @param device        CPU or GPU æ¨ç†
+ * @param openvino_preprocess   æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
  */
-void multi(string& model_path, string& meta_path, string& image_dir, string& save_dir, bool openvino_preprocess = true) {
-    // 1.¶ÁÈ¡meta
+void multi(string& model_path, string& meta_path, string& image_dir, string& save_dir, string& device, bool openvino_preprocess = true){
+    // 1.è¯»å–meta
     MetaData meta = getJson(meta_path);
 
-    // 2.»ñÈ¡Ä£ĞÍ
-    ov::CompiledModel compiled_model = get_openvino_model(model_path, "CPU", openvino_preprocess);
+    // 2.è·å–æ¨¡å‹
+    ov::CompiledModel compiled_model = get_openvino_model(model_path, device, openvino_preprocess);
     ov::InferRequest infer_request = compiled_model.create_infer_request();
 
-    // 3.¶ÁÈ¡È«²¿Í¼Æ¬Â·¾¶
+    // 3.è¯»å–å…¨éƒ¨å›¾ç‰‡è·¯å¾„
     vector<cv::String> paths = getImagePaths(image_dir);
 
     vector<float> times;
     for (auto& image_path : paths) {
-        // 4.¶ÁÈ¡µ¥ÕÅÍ¼Æ¬
+        // 4.è¯»å–å•å¼ å›¾ç‰‡
         cv::Mat image = readImage(image_path);
 
         // time
         auto start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        // 5.ÍÆÀíµ¥ÕÅÍ¼Æ¬
+        // 5.æ¨ç†å•å¼ å›¾ç‰‡
         Result result = infer(compiled_model, infer_request, image, meta, openvino_preprocess);
         cout << "score: " << result.score << endl;
         // time
         auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         cout << "infer time:" << end - start << "ms" << endl;
         times.push_back(end - start);
-        // 6.±£´æÍ¼Æ¬
+        // 6.ä¿å­˜å›¾ç‰‡
         saveScoreAndImage(result.score, result.anomaly_map, image_path, save_dir);
     }
 
-    double sumValue = accumulate(begin(times), end(times), 0.0);  // accumulateº¯Êı¾ÍÊÇÇóvectorºÍµÄº¯Êı£»
-    double meanValue = sumValue / times.size();                   // Çó¾ùÖµ
+    double sumValue = accumulate(begin(times), end(times), 0.0);  // accumulateå‡½æ•°å°±æ˜¯æ±‚vectorå’Œçš„å‡½æ•°ï¼›
+    double meanValue = sumValue / times.size();                   // æ±‚å‡å€¼
     cout << "mean infer time: " << meanValue << endl;
 }
 
 
-int main() {
+int main(){
     string model_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle-cls/optimization/openvino/model.xml";
-    string meta_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle-cls/optimization/meta_data.json";
+    string meta_path  = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle-cls/optimization/meta_data.json";
     string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
-    string image_dir = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
-    string save_dir = "D:/ai/code/abnormal/anomalib-patchcore-openvino/vs/result";
-    // ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí, Ä¿Ç°±ØĞëÊ¹ÓÃËü, ×Ô¼ºĞ´µÄÔ¤´¦ÀíÓĞÎÊÌâ
+    string image_dir  = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
+    string save_dir   = "D:/ai/code/abnormal/anomalib-patchcore-openvino/vs/result";
+    // æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
     bool openvino_preprocess = true;
-    single(model_path, meta_path, image_path, save_dir, openvino_preprocess);
-    //multi(model_path, meta_path, image_dir, save_dir, openvino_preprocess);
+    string device = "CPU";
+    //single(model_path, meta_path, image_path, save_dir,device, openvino_preprocess);
+    multi(model_path, meta_path, image_dir, save_dir, device, openvino_preprocess);
     return 0;
 }
 

@@ -20,12 +20,12 @@ MetaData getJson(const string& json_path) {
     int infer_height      = infer_size[0].GetInt();
     int infer_width       = infer_size[1].GetInt();
 
-//    cout << image_threshold << endl;
-//    cout << pixel_threshold << endl;
-//    cout << min << endl;
-//    cout << max << endl;
-//    cout << infer_height << endl;
-//    cout << infer_width << endl;
+    // cout << image_threshold << endl;
+    // cout << pixel_threshold << endl;
+    // cout << min << endl;
+    // cout << max << endl;
+    // cout << infer_height << endl;
+    // cout << infer_width << endl;
 
     return MetaData {image_threshold, pixel_threshold, min, max, {infer_height, infer_width}};
 }
@@ -69,13 +69,23 @@ void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String&
     cv::imwrite(save_dir + "/" + image_name + ".jpg", mixed_image_with_label);
 }
 
-/**
- *
- * TODO 有问题,openvino推理结果不对
- * @param path	图片路径
- * @param meta  超参数,这里存放原图的宽高
- * @return x	tensor类型的图片
- */
+
+cv::Mat preProcess(cv::Mat& image, MetaData& meta) {
+    vector<float> mean = {0.485, 0.456, 0.406};
+    vector<float> std  = {0.229, 0.224, 0.225};
+
+    // 缩放 w h
+    cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
+
+    // 归一化
+    // convertTo直接将所有值除以255,normalize的NORM_MINMAX是将原始数据范围变换到0~1之间,convertTo更符合深度学习的做法
+    resized_image.convertTo(resized_image, CV_32FC3, 1.0/255, 0);
+    //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
+
+    // 标准化
+    resized_image = Normalize(resized_image, mean, std);
+    return resized_image;
+}
 
 
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val) {

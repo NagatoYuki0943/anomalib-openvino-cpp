@@ -34,7 +34,7 @@ public:
 MetaData getJson(const string& json_path);
 
 
-/*
+/**
  * 获取文件夹下全部图片的绝对路径
  *
  * @param path		    图片文件夹路径
@@ -65,12 +65,12 @@ void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String&
 
 
 /**
- *
- * TODO 有问题,openvino推理结果不对
+ * 图片预处理
  * @param path	图片路径
  * @param meta  超参数,这里存放原图的宽高
  * @return x	tensor类型的图片
  */
+cv::Mat preProcess(cv::Mat& image, MetaData& meta);
 
 
 /**
