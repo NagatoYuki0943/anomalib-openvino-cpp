@@ -14,10 +14,11 @@ using namespace std;
 
 /**
  * get      openvino model
+ * @param   超参数
  * @param   model_path
  * @return  CompiledModel
  */
-ov::CompiledModel get_openvino_model(const string& model_path, const string& device="CPU", bool openvino_preprocess=false){
+ov::CompiledModel get_openvino_model(string& model_path, MetaData& meta,  string& device, bool openvino_preprocess=false){
     vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
     vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
 
@@ -34,8 +35,8 @@ ov::CompiledModel get_openvino_model(const string& model_path, const string& dev
         ov::preprocess::PrePostProcessor ppp = ov::preprocess::PrePostProcessor(model);
         // Specify input image format   input(0) refers to the 0th input.
         ppp.input(0).tensor()
-                .set_element_type(ov::element::u8)
-                .set_layout(ov::Layout("NHWC"))
+                .set_element_type(ov::element::f32)     // u8 -> f32
+                .set_layout(ov::Layout("NCHW"))         // NHWC -> NCHW
                 .set_color_format(ov::preprocess::ColorFormat::RGB);
         // Specify preprocess pipeline to input image without resizing
         ppp.input(0).preprocess()
@@ -52,6 +53,24 @@ ov::CompiledModel get_openvino_model(const string& model_path, const string& dev
     }
 
     ov::CompiledModel compiled_model = core.compile_model(model, device);
+
+    // **模型预热**
+    // 输入数据
+    cv::Size size = cv::Size(meta.infer_size[1], meta.infer_size[0]);
+    cv::Scalar color = cv::Scalar(0, 0, 0);
+    cv::Mat input = cv::Mat(size, CV_32FC3, color);
+    // [H, W, C] -> [N, C, H, W]
+    input = cv::dnn::blobFromImage(input, 1.0,
+                                   {meta.infer_size[1], meta.infer_size[0]},
+                                   {0, 0, 0},
+                                   false, false, CV_32F);
+    auto *input_data = (float *) input.data;
+    ov::Tensor input_tensor = ov::Tensor(compiled_model.input().get_element_type(), compiled_model.input().get_shape(), input_data);
+    // 推理请求
+    ov::InferRequest infer_request = compiled_model.create_infer_request();
+    infer_request.set_input_tensor(input_tensor);
+    infer_request.infer();
+
     return compiled_model;
 }
 
@@ -74,21 +93,22 @@ Result infer(ov::CompiledModel& compiled_model, ov::InferRequest& infer_request,
     // 2.图片预处理
     cv::Mat resized_image;
     if (openvino_preprocess){
-        // [H, W, C]
-        resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
+        // 不需要resize,blobFromImage会resize
+        resized_image = image;
     }else{
         resized_image = preProcess(image, meta);
-        // [H, W, C] -> [N, C, H, W]
-        // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
-        // openvino如果使用这一步的话需要将输入的 Layout 由 NHWC 改为 NCHW  (第38行)
-        resized_image = cv::dnn::blobFromImage(resized_image, 1.0,
-                                               {meta.infer_size[1], meta.infer_size[0]},
-                                               {0, 0, 0},
-                                               false, false, CV_32F);
     }
+    // [H, W, C] -> [N, C, H, W]
+    // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
+    // openvino如果使用这一步的话需要将输入的类型由 u8 转换为 f32, Layout 由 NHWC 改为 NCHW  (38, 39行)
+    resized_image = cv::dnn::blobFromImage(resized_image, 1.0,
+                                           {meta.infer_size[1], meta.infer_size[0]},
+                                           {0, 0, 0},
+                                           false, false, CV_32F);
+
     // 输入全为1测试
-    // cv::Scalar color = cv::Scalar(1, 1, 1);
     // cv::Size size = cv::Size(224, 224);
+    // cv::Scalar color = cv::Scalar(1, 1, 1);
     // resized_image = cv::Mat(size, CV_32FC3, color);
 
     // 3.从图像创建tensor
@@ -136,12 +156,13 @@ Result infer(ov::CompiledModel& compiled_model, ov::InferRequest& infer_request,
  * @param device        CPU or GPU 推理
  * @param openvino_preprocess   是否使用openvino图片预处理
  */
-void single(string& model_path, string& meta_path, string& image_path, string& save_dir, string& device, bool openvino_preprocess = true){
+void single(string& model_path, string& meta_path, string& image_path, string& save_dir,
+            string& device, bool openvino_preprocess = true){
     // 1.读取meta
     MetaData meta = getJson(meta_path);
 
     // 2.获取模型
-    ov::CompiledModel compiled_model = get_openvino_model(model_path, device, openvino_preprocess);
+    ov::CompiledModel compiled_model = get_openvino_model(model_path, meta, device, openvino_preprocess);
     ov::InferRequest infer_request = compiled_model.create_infer_request();
 
     // 3.读取图片
@@ -172,7 +193,7 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
     MetaData meta = getJson(meta_path);
 
     // 2.获取模型
-    ov::CompiledModel compiled_model = get_openvino_model(model_path, device, openvino_preprocess);
+    ov::CompiledModel compiled_model = get_openvino_model(model_path, meta, device, openvino_preprocess);
     ov::InferRequest infer_request = compiled_model.create_infer_request();
 
     // 3.读取全部图片路径
@@ -211,8 +232,7 @@ int main(){
     // 是否使用openvino图片预处理
     bool openvino_preprocess = true;
     string device = "CPU";
-    //single(model_path, meta_path, image_path, save_dir,device, openvino_preprocess);
-    multi(model_path, meta_path, image_dir, save_dir, device, openvino_preprocess);
+    single(model_path, meta_path, image_path, save_dir,device, openvino_preprocess);
+    //multi(model_path, meta_path, image_dir, save_dir, device, openvino_preprocess);
     return 0;
 }
-
