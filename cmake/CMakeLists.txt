@@ -24,4 +24,4 @@ include_directories(../include)
 link_libraries(${OpenCV_LIBRARIES}
                 openvino::runtime)
 
-add_executable(cpp main.cpp utils.cpp opencv_utils.cpp)
+add_executable(main main.cpp utils.cpp opencv_utils.cpp)

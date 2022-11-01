@@ -15,7 +15,7 @@ MetaData getJson(const string& json_path) {
     float pixel_threshold = doc["pixel_threshold"].GetFloat();
     float min             = doc["min"].GetFloat();
     float max             = doc["max"].GetFloat();
-    // 列表分别取出
+    // 脕脨卤铆路脰卤冒脠隆鲁枚
     auto infer_size       = doc["infer_size"].GetArray();
     int infer_height      = infer_size[0].GetInt();
     int infer_width       = infer_size[1].GetInt();
@@ -50,8 +50,8 @@ cv::Mat readImage(string& path) {
 
 
 void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String& image_path, string& save_dir) {
-    // 获取图片文件名
-    // 这样基本确保无论使用 \ / 作为分隔符都能找到文件名字
+    // 禄帽脠隆脥录脝卢脦脛录镁脙没
+    // 脮芒脩霉禄霉卤戮脠路卤拢脦脼脗脹脢鹿脫脙 \ / 脳梅脦陋路脰赂么路没露录脛脺脮脪碌陆脦脛录镁脙没脳脰
     auto start = image_path.rfind('\\');
     if (start < 0 || start > image_path.length()){
         start = image_path.rfind('/');
@@ -59,58 +59,27 @@ void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String&
     auto end = image_path.substr(start + 1).rfind('.');
     auto image_name = image_path.substr(start + 1).substr(0, end);  // 000
 
-    // 写入得分
+    // 脨麓脠毛碌脙路脰
     ofstream ofs;
     ofs.open(save_dir + "/" + image_name + ".txt", ios::out);
     ofs << score;
     ofs.close();
 
-    // 写入图片
+    // 脨麓脠毛脥录脝卢
     cv::imwrite(save_dir + "/" + image_name + ".jpg", mixed_image_with_label);
-}
-
-
-cv::Mat preProcess(cv::Mat& image, MetaData& meta) {
-    vector<float> mean = {0.485, 0.456, 0.406};
-    vector<float> std  = {0.229, 0.224, 0.225};
-
-    // 缩放 w h
-    cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
-
-    // 归一化
-    // convertTo直接将所有值除以255,normalize的NORM_MINMAX是将原始数据范围变换到0~1之间,convertTo更符合深度学习的做法
-    resized_image.convertTo(resized_image, CV_32FC3, 1.0/255, 0);
-    //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
-
-    // 标准化
-    resized_image = Normalize(resized_image, mean, std);
-    return resized_image;
 }
 
 
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val) {
     auto normalized = ((targets - threshold) / (max_val - min_val)) + 0.5;
     cv::Mat normalized1;
-    // normalized = np.clip(normalized, 0, 1) 去除小于0和大于1的
-    // 设置上下限: https://blog.csdn.net/simonyucsdy/article/details/106525717
-    // 设置上限为1
+    // normalized = np.clip(normalized, 0, 1) 脠楼鲁媒脨隆脫脷0潞脥麓贸脫脷1碌脛
+    // 脡猫脰脙脡脧脧脗脧脼: https://blog.csdn.net/simonyucsdy/article/details/106525717
+    // 脡猫脰脙脡脧脧脼脦陋1
     cv::threshold(normalized, normalized1, 1, 1, cv::ThresholdTypes::THRESH_TRUNC);
-    // 设置下限为0
+    // 脡猫脰脙脧脗脧脼脦陋0
     cv::threshold(normalized1, normalized1, 0, 0, cv::ThresholdTypes::THRESH_TOZERO);
     return normalized1;
-}
-
-
-vector<cv::Mat> postProcess(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta) {
-    // 标准化热力图和得分
-    anomaly_map = cvNormalizeMinMax(anomaly_map, meta.pixel_threshold, meta.min, meta.max);
-    pred_score  = cvNormalizeMinMax(pred_score, meta.image_threshold, meta.min, meta.max);
-
-    // 还原到原图尺寸
-    anomaly_map = Resize(anomaly_map, meta.image_size[0], meta.image_size[1], "bilinear");
-
-    // 返回热力图和得分
-    return vector<cv::Mat>{anomaly_map, pred_score};
 }
 
 
@@ -118,17 +87,17 @@ cv::Mat superimposeAnomalyMap(const cv::Mat& anomaly_map, cv::Mat& origin_image)
     cv::cvtColor(origin_image, origin_image, cv::ColorConversionCodes::COLOR_RGB2BGR);    // RGB2BGR
 
     auto anomaly = anomaly_map.clone();
-    // 归一化，图片效果更明显
-    //python代码： anomaly_map = (anomaly - anomaly.min()) / np.ptp(anomaly) np.ptp()函数实现的功能等同于np.max(array) - np.min(array)
-    double minValue, maxValue;    // 最大值，最小值
+    // 鹿茅脪禄禄炉拢卢脥录脝卢脨搂鹿没赂眉脙梅脧脭
+    //python麓煤脗毛拢潞 anomaly_map = (anomaly - anomaly.min()) / np.ptp(anomaly) np.ptp()潞炉脢媒脢碌脧脰碌脛鹿娄脛脺碌脠脥卢脫脷np.max(array) - np.min(array)
+    double minValue, maxValue;    // 脳卯麓贸脰碌拢卢脳卯脨隆脰碌
     cv::minMaxLoc(anomaly, &minValue, &maxValue);
     anomaly = (anomaly - minValue) / (maxValue - minValue);
 
-    //转换为整形
+    //脳陋禄禄脦陋脮没脨脦
     anomaly.convertTo(anomaly, CV_8UC1, 255, 0);
-    //单通道转化为3通道
+    //碌楼脥篓碌脌脳陋禄炉脦陋3脥篓碌脌
     cv::applyColorMap(anomaly, anomaly, cv::ColormapTypes::COLORMAP_JET);
-    //合并原图和热力图
+    //潞脧虏垄脭颅脥录潞脥脠脠脕娄脥录
     cv::Mat combine;
     cv::addWeighted(anomaly, 0.4, origin_image, 0.6, 0, combine);
 
@@ -144,11 +113,11 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
     cv::Size textsize = cv::getTextSize(text, font, font_size, thickness, &baseline);
     //cout << textsize << endl; //[1627 x 65]
 
-    //背景
+    //卤鲁戮掳
     cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10),
                   cv::Scalar(225, 252, 134), cv::FILLED);
 
-    //添加文字
+    //脤铆录脫脦脛脳脰
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size,
                 cv::Scalar(0, 0, 0), thickness);
 

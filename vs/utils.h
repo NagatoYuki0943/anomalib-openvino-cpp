@@ -65,15 +65,6 @@ void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String&
 
 
 /**
- * 图片预处理
- * @param path  图片路径
- * @param meta  超参数,这里存放原图的宽高
- * @return x    tensor类型的图片
- */
-cv::Mat preProcess(cv::Mat& image, MetaData& meta);
-
-
-/**
  * opencv标准化热力图
  *
  * @param targets       热力图
@@ -83,16 +74,6 @@ cv::Mat preProcess(cv::Mat& image, MetaData& meta);
  * @return normalized   经过标准化后的结果
  */
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val);
-
-
-/**
- * 后处理部分,标准化热力图和得分,还原热力图到原图尺寸
- *
- * @param anomaly_map   未经过标准化的热力图
- * @param pred_score    未经过标准化的得分
- * @return result       热力图和得分vector
- */
-vector<cv::Mat> postProcess(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta);
 
 
 /**

@@ -121,16 +121,9 @@ include_directories(../include)
       openvino_ir_frontendd.lib
       opencv_core455d.lib
       opencv_dnn455d.lib
-      opencv_features2d455d.lib
-      opencv_flann455d.lib
-      opencv_gapi455d.lib
       opencv_highgui455d.lib
       opencv_imgcodecs455d.lib
       opencv_imgproc455d.lib
-      opencv_ml455d.lib
-      opencv_objdetect455d.lib
-      opencv_photo455d.lib
-      opencv_stitching455d.lib
       
       # release
       openvino.lib
@@ -138,16 +131,9 @@ include_directories(../include)
       openvino_ir_frontend.lib
       opencv_core455.lib
       opencv_dnn455.lib
-      opencv_features2d455.lib
-      opencv_flann455.lib
-      opencv_gapi455.lib
       opencv_highgui455.lib
       opencv_imgcodecs455.lib
       opencv_imgproc455.lib
-      opencv_ml455.lib
-      opencv_objdetect455.lib
-      opencv_photo455.lib
-      opencv_stitching455.lib
       ```
 
 # 错误

@@ -122,7 +122,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\ai\openvino\openvino_2022.1.0.643\runtime\lib\intel64\Debug;D:\ai\openvino\openvino_2022.1.0.643\extras\opencv\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>openvinod.lib;openvino_cd.lib;openvino_ir_frontendd.lib;opencv_core455d.lib;opencv_dnn455d.lib;opencv_features2d455d.lib;opencv_flann455d.lib;opencv_gapi455d.lib;opencv_highgui455d.lib;opencv_imgcodecs455d.lib;opencv_imgproc455d.lib;opencv_ml455d.lib;opencv_objdetect455d.lib;opencv_photo455d.lib;opencv_stitching455d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>openvinod.lib;openvino_cd.lib;openvino_ir_frontendd.lib;opencv_core455d.lib;opencv_dnn455d.lib;opencv_highgui455d.lib;opencv_imgcodecs455d.lib;opencv_imgproc455d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -141,7 +141,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\ai\openvino\openvino_2022.1.0.643\runtime\lib\intel64\Release;D:\ai\openvino\openvino_2022.1.0.643\extras\opencv\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>openvino.lib;openvino_c.lib;openvino_ir_frontend.lib;opencv_core455.lib;opencv_dnn455.lib;opencv_features2d455.lib;opencv_flann455.lib;opencv_gapi455.lib;opencv_highgui455.lib;opencv_imgcodecs455.lib;opencv_imgproc455.lib;opencv_ml455.lib;opencv_objdetect455.lib;opencv_photo455.lib;opencv_stitching455.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>openvino.lib;openvino_c.lib;openvino_ir_frontend.lib;opencv_core455.lib;opencv_dnn455.lib;opencv_highgui455.lib;opencv_imgcodecs455.lib;opencv_imgproc455.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
