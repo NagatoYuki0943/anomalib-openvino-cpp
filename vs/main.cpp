@@ -13,11 +13,10 @@ using namespace std;
 
 class Inference{
 private:
+    bool openvino_preprocess;           // 是否使用openvino图片预处理
     MetaData meta{};                    // 超参数
     ov::CompiledModel compiled_model;   // 编译好的模型
     ov::InferRequest infer_request;     // 推理请求
-    string device;                      // 使用的设备
-    bool openvino_preprocess;           // 是否使用openvino图片预处理
 
 public:
     /**
@@ -27,12 +26,11 @@ public:
      * @param openvino_preprocess   是否使用openvino图片预处理
      */
     Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess){
-        // 1.读取meta
-        this->meta   = getJson(meta_path);
-        this->device = device;
         this->openvino_preprocess = openvino_preprocess;
+        // 1.读取meta
+        this->meta = getJson(meta_path);
         // 2.创建模型
-        this->get_openvino_model(model_path);
+        this->compiled_model = this->get_openvino_model(model_path, device);
         // 3.创建推理请求
         this->infer_request = this->compiled_model.create_infer_request();
         // 4.模型预热
@@ -43,9 +41,9 @@ public:
      * get openvino model
      * @param model_path
      */
-    void get_openvino_model(string& model_path){
-        vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
-        vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
+    ov::CompiledModel get_openvino_model(string& model_path, string& device) const {
+        vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
+        vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
 
         // Step 1. Initialize OpenVINO Runtime core
         ov::Core core;
@@ -53,7 +51,7 @@ public:
         std::shared_ptr<ov::Model> model = core.read_model(model_path);
 
         if(this->openvino_preprocess){
-            // Step 4. Inizialize Preprocessing for the model
+            // Step 3. Inizialize Preprocessing for the model
             // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
             // https://blog.csdn.net/sandmangu/article/details/107181289
             // https://docs.openvino.ai/latest/openvino_2_0_preprocessing.html
@@ -103,8 +101,8 @@ public:
             // output().model() 只有1个方法
             // ppp.output().model().set_layout();
         }
-        // 模型
-        this->compiled_model = core.compile_model(model, this->device);
+        // Step 4. Load the Model to the Device
+        return core.compile_model(model, device);
     }
 
 
@@ -125,7 +123,7 @@ public:
      * @param image 预处理图片
      * @return      经过预处理的图片
      */
-    cv::Mat preProcess(cv::Mat& image) {
+    cv::Mat pre_process(cv::Mat& image) {
         vector<float> mean = {0.485, 0.456, 0.406};
         vector<float> std  = {0.229, 0.224, 0.225};
 
@@ -150,7 +148,7 @@ public:
      * @param pred_score    未经过标准化的得分
      * @return result       热力图和得分vector
      */
-    vector<cv::Mat> postProcess(cv::Mat& anomaly_map, cv::Mat& pred_score) {
+    vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score) {
         // 标准化热力图和得分
         anomaly_map = cvNormalizeMinMax(anomaly_map, this->meta.pixel_threshold, this->meta.min, this->meta.max);
         pred_score  = cvNormalizeMinMax(pred_score, this->meta.image_threshold, this->meta.min, this->meta.max);
@@ -179,7 +177,7 @@ public:
             // 不需要resize,blobFromImage会resize
             resized_image = image;
         }else{
-            resized_image = this->preProcess(image);
+            resized_image = this->pre_process(image);
         }
         // [H, W, C] -> [N, C, H, W]
         // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
@@ -217,7 +215,7 @@ public:
         cout << "pred_score: " << pred_score << endl;   // 4.0252275
 
         // 7.后处理:标准化,缩放到原图
-        vector<cv::Mat> result = this->postProcess(anomaly_map, pred_score);
+        vector<cv::Mat> result = this->post_process(anomaly_map, pred_score);
         anomaly_map = result[0];
         float score = result[1].at<float>(0, 0);
 
