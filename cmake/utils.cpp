@@ -49,7 +49,7 @@ cv::Mat readImage(string& path) {
 }
 
 
-void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String& image_path, string& save_dir) {
+void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir) {
     // 获取图片文件名
     // 这样基本确保无论使用 \ / 作为分隔符都能找到文件名字
     auto start = image_path.rfind('\\');
@@ -65,8 +65,29 @@ void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String&
     ofs << score;
     ofs.close();
 
+    cv::Mat res;
+    cv::hconcat(images, res);
+
     // 写入图片
-    cv::imwrite(save_dir + "/" + image_name + ".jpg", mixed_image_with_label);
+    cv::imwrite(save_dir + "/" + image_name + ".jpg", res);
+}
+
+
+cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
+    vector<float> mean = {0.485, 0.456, 0.406};
+    vector<float> std  = {0.229, 0.224, 0.225};
+
+    // 缩放 w h
+    cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
+
+    // 归一化
+    // convertTo直接将所有值除以255,normalize的NORM_MINMAX是将原始数据范围变换到0~1之间,convertTo更符合深度学习的做法
+    resized_image.convertTo(resized_image, CV_32FC3, 1.0/255, 0);
+    //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
+
+    // 标准化
+    resized_image = Normalize(resized_image, mean, std);
+    return resized_image;
 }
 
 
@@ -83,9 +104,20 @@ cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, floa
 }
 
 
-cv::Mat superimposeAnomalyMap(const cv::Mat& anomaly_map, cv::Mat& origin_image) {
-    cv::cvtColor(origin_image, origin_image, cv::ColorConversionCodes::COLOR_RGB2BGR);    // RGB2BGR
+vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData &meta) {
+    // 标准化热力图和得分
+    anomaly_map = cvNormalizeMinMax(anomaly_map, meta.pixel_threshold, meta.min, meta.max);
+    pred_score  = cvNormalizeMinMax(pred_score, meta.image_threshold, meta.min, meta.max);
 
+    // 还原到原图尺寸
+    anomaly_map = Resize(anomaly_map, meta.image_size[0], meta.image_size[1], "bilinear");
+
+    // 返回热力图和得分
+    return vector<cv::Mat>{anomaly_map, pred_score};
+}
+
+
+cv::Mat superimposeAnomalyMap(cv::Mat& anomaly_map, cv::Mat& origin_image) {
     auto anomaly = anomaly_map.clone();
     // 归一化，图片效果更明显
     //python代码： anomaly_map = (anomaly - anomaly.min()) / np.ptp(anomaly) np.ptp()函数实现的功能等同于np.max(array) - np.min(array)
@@ -124,3 +156,58 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
     return mixed_image;
 }
 
+
+cv::Mat compute_mask(cv::Mat& anomaly_map, float threshold, int kernel_size) {
+    cv::Mat mask = anomaly_map.clone();
+    // 二值化 https://blog.csdn.net/weixin_42296411/article/details/80901080
+    cv::threshold(mask, mask, threshold, 1, cv::ThresholdTypes::THRESH_BINARY);
+
+    // 开操作减少小点
+    auto kernel = cv::getStructuringElement(cv::MorphShapes::MORPH_ELLIPSE, {kernel_size, kernel_size}, {-1, -1});
+    cv::morphologyEx(mask, mask, cv::MorphTypes::MORPH_OPEN, kernel, {-1, -1}, 1);
+
+    // 缩放到255,转化为uint
+    mask.convertTo(mask, CV_8UC1, 255, 0);
+
+    return mask;
+}
+
+
+cv::Mat gen_mask_border(cv::Mat& mask, cv::Mat& image) {
+    cv::Mat b = cv::Mat::zeros(mask.size[0], mask.size[1], CV_8UC1);
+    cv::Mat g = b.clone();
+    cv::Mat r = b.clone();
+
+    // auto kernel = cv::getStructuringElement(cv::MorphShapes::MORPH_ELLIPSE, {3, 3}, {-1, -1});
+    // cv::morphologyEx(mask, mask_dilation, cv::MorphTypes::MORPH_CLOSE, kernel, {-1, -1}, 1);
+    cv::Canny(mask, r, 128, 255, 3, false);
+
+    // 整合为3通道图片
+    vector<cv::Mat> rgb{b, g, r};
+    cv::Mat border;
+    cv::merge(rgb, border);
+
+    // 边缘和原图相加
+    // border = image + border;
+    cv::addWeighted(border, 0.4, image, 0.6, 0, border);
+    return border;
+}
+
+
+vector<cv::Mat> gen_images(cv::Mat& image, cv::Mat& anomaly_map, float score, float threshold) {
+    // 0.rgb2bgr
+    cv::cvtColor(image, image, cv::ColorConversionCodes::COLOR_RGB2BGR);    // RGB2BGR
+
+    // 1.计算mask
+    cv::Mat mask = compute_mask(anomaly_map, threshold);
+
+    // 2.计算mask外边界
+    cv::Mat border = gen_mask_border(mask, image);
+
+    // 3.叠加原图和热力图
+    cv::Mat superimposed_map = superimposeAnomalyMap(anomaly_map, image);
+
+    // 4.给图片添加分数
+    superimposed_map = addLabel(superimposed_map, score);
+    return vector<cv::Mat>{mask, border, superimposed_map};
+}

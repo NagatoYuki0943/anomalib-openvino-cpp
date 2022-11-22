@@ -61,7 +61,15 @@ cv::Mat readImage(string& path);
  * @param image_path 输入图片的路径
  * @param save_dir   保存的路径
  */
-void saveScoreAndImage(float score, cv::Mat& mixed_image_with_label, cv::String& image_path, string& save_dir);
+void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir);
+
+
+/**
+ * 图片预处理
+ * @param image 预处理图片
+ * @return      经过预处理的图片
+ */
+cv::Mat pre_process(cv::Mat& image, MetaData& meta);
 
 
 /**
@@ -77,13 +85,23 @@ cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, floa
 
 
 /**
+ * 后处理部分,标准化热力图和得分,还原热力图到原图尺寸
+ *
+ * @param anomaly_map   未经过标准化的热力图
+ * @param pred_score    未经过标准化的得分
+ * @param meta          meta超参数
+ * @return result		热力图和得分vector
+ */
+vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta);
+
+/**
  * 叠加图片
  *
  * @param anomaly_map   混合后的图片
  * @param origin_image  原始图片
  * @return result       叠加后的图像
  */
-cv::Mat superimposeAnomalyMap(const cv::Mat& anomaly_map, cv::Mat& origin_image);
+cv::Mat superimposeAnomalyMap(cv::Mat& anomaly_map, cv::Mat& origin_image);
 
 
 /**
@@ -100,8 +118,41 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font = cv::FONT_HERSHEY_
 /**
  * 推理结果：热力图 + 得分
  */
-struct Result{
+struct Result {
 public:
     cv::Mat anomaly_map;
     float score;
 };
+
+
+/**
+ * 计算mask
+ *
+ * @param anomaly_map 热力图
+ * @param threshold   二值化阈值
+ * @param kernel_size 开操作kernel_size
+ * @return mask
+ */
+cv::Mat compute_mask(cv::Mat& anomaly_map, float threshold = 0.5, int kernel_size = 1);
+
+
+/**
+ * 计算mask边界并混合到原图
+ *
+ * @param mask  mask
+ * @param image 原图
+ * @return      混合mask边界的原图
+ */
+cv::Mat gen_mask_border(cv::Mat& mask, cv::Mat& image);
+
+
+/**
+ * 生成mask,mask边缘,热力图和原图的叠加
+ *
+ * @param image        原图
+ * @param anomaly_map  热力图
+ * @param score        得分
+ * @param threshold    热力图二值化阈值
+ * @return
+ */
+vector<cv::Mat> gen_images(cv::Mat& image, cv::Mat& anomaly_map, float score, float threshold = 0.5);

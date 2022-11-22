@@ -11,12 +11,38 @@
 using namespace std;
 
 
+/**
+ * input(0)/output(0) 按照id找指定的输入输出，不指定找全部的输入输出
+ *
+ *  input().tensor()       有7个方法
+ *  ppp.input().tensor().set_color_format().set_element_type().set_layout()
+ *                      .set_memory_type().set_shape().set_spatial_dynamic_shape().set_spatial_static_shape();
+ *
+ *  output().tensor()      有2个方法
+ *  ppp.output().tensor().set_layout().set_element_type();
+ *
+ *  input().preprocess()   有8个方法
+ *  ppp.input().preprocess().convert_color().convert_element_type().mean().scale()
+ *                          .convert_layout().reverse_channels().resize().custom();
+ *
+ *  output().postprocess() 有3个方法
+ *  ppp.output().postprocess().convert_element_type().convert_layout().custom();
+ *
+ *  input().model()  只有1个方法
+ *  ppp.input().model().set_layout();
+ *
+ *  output().model() 只有1个方法
+ *  ppp.output().model().set_layout();
+ **/
+
 class Inference{
 private:
     bool openvino_preprocess;           // 是否使用openvino图片预处理
     MetaData meta{};                    // 超参数
     ov::CompiledModel compiled_model;   // 编译好的模型
     ov::InferRequest infer_request;     // 推理请求
+    vector<ov::Output<const ov::Node>> inputs;  // 模型的输入列表名称
+    vector<ov::Output<const ov::Node>> outputs; // 模型的输出列表名称
 
 public:
     /**
@@ -31,9 +57,12 @@ public:
         this->meta = getJson(meta_path);
         // 2.创建模型
         this->compiled_model = this->get_openvino_model(model_path, device);
-        // 3.创建推理请求
+        // 3.获取模型的输入输出
+        this->inputs = this->compiled_model.inputs();
+        this->outputs = this->compiled_model.outputs();
+        // 4.创建推理请求
         this->infer_request = this->compiled_model.create_infer_request();
-        // 4.模型预热
+        // 5.模型预热
         this->warm_up();
     }
 
@@ -58,7 +87,7 @@ public:
             // https://docs.openvino.ai/latest/openvino_2_0_preprocessing.html
             ov::preprocess::PrePostProcessor ppp = ov::preprocess::PrePostProcessor(model);
 
-            // Specify input image format   input(0) refers to the 0th input.
+            // Specify input image format
             ppp.input(0).tensor()
                 .set_color_format(ov::preprocess::ColorFormat::RGB)      // BGR -> RGB
                 .set_element_type(ov::element::f32)                             // u8 -> f32
@@ -75,32 +104,10 @@ public:
             ppp.input(0).model().set_layout(ov::Layout("NCHW"));
 
             // Specify output results format
-            ppp.output(0).tensor().set_element_type(ov::element::f32);
-            ppp.output(1).tensor().set_element_type(ov::element::f32);
-
+            ppp.output().tensor().set_element_type(ov::element::f32);
             // Embed above steps in the graph
             model = ppp.build();
 
-
-            // input().tensor()       有7个方法
-            // ppp.input().tensor().set_color_format().set_element_type().set_layout()
-            //                     .set_memory_type().set_shape().set_spatial_dynamic_shape().set_spatial_static_shape();
-
-            // output().tensor()      有2个方法
-            // ppp.output().tensor().set_layout().set_element_type();
-
-            // input().preprocess()   有8个方法
-            // ppp.input().preprocess().convert_color().convert_element_type().mean().scale()
-            //                         .convert_layout().reverse_channels().resize().custom();
-
-            // output().postprocess() 有3个方法
-            // ppp.output().postprocess().convert_element_type().convert_layout().custom();
-
-            // input().model()  只有1个方法
-            // ppp.input().model().set_layout();
-
-            // output().model() 只有1个方法
-            // ppp.output().model().set_layout();
         }
         // Step 4. Load the Model to the Device
         return core.compile_model(model, device);
@@ -120,52 +127,9 @@ public:
 
 
     /**
-     * 图片预处理
-     * @param image 预处理图片
-     * @return      经过预处理的图片
-     */
-    cv::Mat pre_process(cv::Mat& image) {
-        vector<float> mean = {0.485, 0.456, 0.406};
-        vector<float> std  = {0.229, 0.224, 0.225};
-
-        // 缩放 w h
-        cv::Mat resized_image = Resize(image, this->meta.infer_size[0], this->meta.infer_size[1], "bilinear");
-
-        // 归一化
-        // convertTo直接将所有值除以255,normalize的NORM_MINMAX是将原始数据范围变换到0~1之间,convertTo更符合深度学习的做法
-        resized_image.convertTo(resized_image, CV_32FC3, 1.0/255, 0);
-        //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
-
-        // 标准化
-        resized_image = Normalize(resized_image, mean, std);
-        return resized_image;
-    }
-
-
-    /**
-     * 后处理部分,标准化热力图和得分,还原热力图到原图尺寸
-     *
-     * @param anomaly_map   未经过标准化的热力图
-     * @param pred_score    未经过标准化的得分
-     * @return result		热力图和得分vector
-     */
-    vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score) {
-        // 标准化热力图和得分
-        anomaly_map = cvNormalizeMinMax(anomaly_map, this->meta.pixel_threshold, this->meta.min, this->meta.max);
-        pred_score  = cvNormalizeMinMax(pred_score, this->meta.image_threshold, this->meta.min, this->meta.max);
-
-        // 还原到原图尺寸
-        anomaly_map = Resize(anomaly_map, this->meta.image_size[0], this->meta.image_size[1], "bilinear");
-
-        // 返回热力图和得分
-        return vector<cv::Mat>{anomaly_map, pred_score};
-    }
-
-
-    /**
      * 推理单张图片
      * @param image 原始图片
-     * @return      叠加热力图的原图和得分
+     * @return      标准化的并所放到原图热力图和得分
      */
     Result infer(cv::Mat& image){
         // 1.保存图片原始高宽
@@ -178,7 +142,7 @@ public:
             // 不需要resize,blobFromImage会resize
             resized_image = image;
         }else{
-            resized_image = this->pre_process(image);
+            resized_image = pre_process(image, meta);
         }
         // [H, W, C] -> [N, C, H, W]
         // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
@@ -195,39 +159,42 @@ public:
 
         // 3.从图像创建tensor
         auto *input_data = (float *) resized_image.data;
-        ov::Tensor input_tensor = ov::Tensor(this->compiled_model.input().get_element_type(),
-                                             this->compiled_model.input().get_shape(), input_data);
+        ov::Tensor input_tensor = ov::Tensor(this->compiled_model.input(0).get_element_type(),
+                                             this->compiled_model.input(0).get_shape(), input_data);
 
         // 4.推理
         this->infer_request.set_input_tensor(input_tensor);
         this->infer_request.infer();
 
-        // 5.获取输出
-        const ov::Tensor &result1 = this->infer_request.get_output_tensor(0);
-        const ov::Tensor &result2 = this->infer_request.get_output_tensor(1);
+        // 5.获取热力图
+        ov::Tensor result1;
+        result1 = this->infer_request.get_output_tensor(0);
         // cout << result1.get_shape() << endl;    //{1, 1, 224, 224}
-        // cout << result2.get_shape() << endl;    //{1}
 
-        // 6.将输出转换为Mat
-        // result1.data<float>() 返回指针 放入Mat中不能解印用
+        // 6.将热力图转换为Mat
+        // result1.data<float>() 返回指针 放入Mat中不能解引用
         cv::Mat anomaly_map = cv::Mat(cv::Size(this->meta.infer_size[1], this->meta.infer_size[0]),
                                       CV_32FC1, result1.data<float>());
-        cv::Mat pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, result2.data<float>());
+        cv::Mat pred_score;
+
+        // 7.针对不同输出数量获取得分
+        if(this->outputs.size() == 2){
+            ov::Tensor result2 = this->infer_request.get_output_tensor(1);
+            pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, result2.data<float>());  // {1}
+        }else{
+            double _, maxValue;    // 最大值，最小值
+            cv::minMaxLoc(anomaly_map, &_, &maxValue);
+            pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, maxValue);
+        }
         cout << "pred_score: " << pred_score << endl;   // 4.0252275
 
-        // 7.后处理:标准化,缩放到原图
-        vector<cv::Mat> result = this->post_process(anomaly_map, pred_score);
+        // 8.后处理:标准化,缩放到原图
+        vector<cv::Mat> result = post_process(anomaly_map, pred_score, meta);
         anomaly_map = result[0];
         float score = result[1].at<float>(0, 0);
 
-        // 8.叠加原图和热力图,从这里开始就是为了显示做准备了
-        anomaly_map = superimposeAnomalyMap(anomaly_map, image);
-
-        // 9.给图片添加分数
-        anomaly_map = addLabel(anomaly_map, score);
-
-        // 10.返回结果
-        return Result {anomaly_map, score};
+        // 9.返回结果
+        return Result{ anomaly_map, score };
     }
 };
 
@@ -249,13 +216,25 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
     // 2.读取图片
     cv::Mat image = readImage(image_path);
 
+    // time
+    auto start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     // 3.推理单张图片
     Result result = inference.infer(image);
-
-    // 4.保存显示图片
     cout << "score: " << result.score << endl;
-    saveScoreAndImage(result.score, result.anomaly_map, image_path, save_dir);
-    cv::imshow("result", result.anomaly_map);
+
+    // 4.生成其他图片(mask,mask边缘,热力图和原图的叠加)
+    vector<cv::Mat> images = gen_images(image, result.anomaly_map, result.score);
+    // time
+    auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    cout << "infer time:" << end - start << "ms" << endl;
+
+    // 5.保存显示图片
+    // 将mask转化为3通道,不然没法拼接图片
+    cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
+
+    saveScoreAndImage(result.score, images, image_path, save_dir);
+
+    cv::imshow("result", images[2]);
     cv::waitKey(0);
 }
 
@@ -287,12 +266,16 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
         // 4.推理单张图片
         Result result = inference.infer(image);
         cout << "score: " << result.score << endl;
+
+        // 5.图片生成其他图片(mask,mask边缘,热力图和原图的叠加)
+        vector<cv::Mat> images = gen_images(image, result.anomaly_map, result.score);
         // time
         auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         cout << "infer time:" << end - start << "ms" << endl;
         times.push_back(end - start);
-        // 5.保存图片
-        saveScoreAndImage(result.score, result.anomaly_map, image_path, save_dir);
+
+        // 6.保存图片
+        saveScoreAndImage(result.score, images, image_path, save_dir);
     }
 
     // 6.统计数据
@@ -303,15 +286,15 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
 
 
 int main(){
-    string model_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle-cls/optimization/openvino/model.xml";
-    string meta_path  = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle-cls/optimization/meta_data.json";
+    string model_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/run/optimization/openvino/model.xml";
+    string param_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/run/optimization/meta_data.json";
     string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
     string image_dir  = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
     string save_dir   = "D:/ai/code/abnormal/anomalib-patchcore-openvino/cmake/result";
     // 是否使用openvino图片预处理
     bool openvino_preprocess = true;
     string device = "CPU";
-    single(model_path, meta_path, image_path, save_dir,device, openvino_preprocess);
-    // multi(model_path, meta_path, image_dir, save_dir, device, openvino_preprocess);
+    single(model_path, param_path, image_path, save_dir,device, openvino_preprocess);
+    // multi(model_path, param_path, image_dir, save_dir, device, openvino_preprocess);
     return 0;
 }
