@@ -1,10 +1,10 @@
-#include <opencv2/dnn.hpp>
-#include <opencv2/opencv.hpp>
-#include <openvino/openvino.hpp>
 #include <string>
 #include <numeric>
 #include <vector>
 #include <Windows.h>
+#include <opencv2/dnn.hpp>
+#include <opencv2/opencv.hpp>
+#include <openvino/openvino.hpp>
 #include"utils.h"
 
 
@@ -35,7 +35,7 @@ using namespace std;
  *  ppp.output().model().set_layout();
  **/
 
-class Inference{
+class Inference {
 private:
     bool openvino_preprocess;           // 是否使用openvino图片预处理
     MetaData meta{};                    // 超参数
@@ -51,7 +51,7 @@ public:
      * @param device        CPU or GPU 推理
      * @param openvino_preprocess   是否使用openvino图片预处理
      */
-    Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess){
+    Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess) {
         this->openvino_preprocess = openvino_preprocess;
         // 1.读取meta
         this->meta = getJson(meta_path);
@@ -71,16 +71,16 @@ public:
      * @param model_path 模型路径
      * @param device     使用的设备
      */
-    ov::CompiledModel get_openvino_model(string& model_path, string& device) const{
-        vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
-        vector<float> std  = {0.229 * 255, 0.224 * 255, 0.225 * 255};
+    ov::CompiledModel get_openvino_model(string& model_path, string& device) const {
+        vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
+        vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
 
         // Step 1. Initialize OpenVINO Runtime core
         ov::Core core;
         // Step 2. Read a Model from a Drive
         std::shared_ptr<ov::Model> model = core.read_model(model_path);
 
-        if(this->openvino_preprocess){
+        if (this->openvino_preprocess) {
             // Step 3. Inizialize Preprocessing for the model
             // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
             // https://blog.csdn.net/sandmangu/article/details/107181289
@@ -89,14 +89,14 @@ public:
 
             // Specify input image format
             ppp.input(0).tensor()
-                .set_color_format(ov::preprocess::ColorFormat::RGB)      // BGR -> RGB
-                .set_element_type(ov::element::f32)                             // u8 -> f32
-                .set_layout(ov::Layout("NCHW"));                 // NHWC -> NCHW
+                .set_color_format(ov::preprocess::ColorFormat::RGB)     // BGR -> RGB
+                .set_element_type(ov::element::f32)                            // u8 -> f32
+                .set_layout(ov::Layout("NCHW"));                // NHWC -> NCHW
 
             // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
-            //  .convert_color(ov::preprocess::ColorFormat::RGB)
-            //  .convert_element_type(ov::element::f32)
+                //  .convert_color(ov::preprocess::ColorFormat::RGB)
+                //  .convert_element_type(ov::element::f32)
                 .mean(mean)
                 .scale(std);
 
@@ -117,7 +117,7 @@ public:
     /**
      * 模型预热
      */
-    void warm_up(){
+    void warm_up() {
         // 输入数据
         cv::Size size = cv::Size(this->meta.infer_size[1], this->meta.infer_size[0]);
         cv::Scalar color = cv::Scalar(0, 0, 0);
@@ -131,26 +131,27 @@ public:
      * @param image 原始图片
      * @return      标准化的并所放到原图热力图和得分
      */
-    Result infer(cv::Mat& image){
+    Result infer(cv::Mat& image) {
         // 1.保存图片原始高宽
         this->meta.image_size[0] = image.size[0];
         this->meta.image_size[1] = image.size[1];
 
         // 2.图片预处理
         cv::Mat resized_image;
-        if (this->openvino_preprocess){
+        if (this->openvino_preprocess) {
             // 不需要resize,blobFromImage会resize
             resized_image = image;
-        }else{
+        }
+        else {
             resized_image = pre_process(image, meta);
         }
         // [H, W, C] -> [N, C, H, W]
         // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
         // openvino如果使用这一步的话需要将输入的类型由 u8 转换为 f32, Layout 由 NHWC 改为 NCHW  (38, 39行)
         resized_image = cv::dnn::blobFromImage(resized_image, 1.0,
-                                               {this->meta.infer_size[1], this->meta.infer_size[0]},
-                                               {0, 0, 0},
-                                               false, false, CV_32F);
+            { this->meta.infer_size[1], this->meta.infer_size[0] },
+            { 0, 0, 0 },
+            false, false, CV_32F);
 
         // 输入全为1测试
         // cv::Size size = cv::Size(224, 224);
@@ -158,9 +159,9 @@ public:
         // resized_image = cv::Mat(size, CV_32FC3, color);
 
         // 3.从图像创建tensor
-        auto *input_data = (float *) resized_image.data;
+        auto* input_data = (float*)resized_image.data;
         ov::Tensor input_tensor = ov::Tensor(this->compiled_model.input(0).get_element_type(),
-                                             this->compiled_model.input(0).get_shape(), input_data);
+            this->compiled_model.input(0).get_shape(), input_data);
 
         // 4.推理
         this->infer_request.set_input_tensor(input_tensor);
@@ -174,14 +175,15 @@ public:
         // 6.将热力图转换为Mat
         // result1.data<float>() 返回指针 放入Mat中不能解引用
         cv::Mat anomaly_map = cv::Mat(cv::Size(this->meta.infer_size[1], this->meta.infer_size[0]),
-                                      CV_32FC1, result1.data<float>());
+            CV_32FC1, result1.data<float>());
         cv::Mat pred_score;
 
         // 7.针对不同输出数量获取得分
-        if(this->outputs.size() == 2){
+        if (this->outputs.size() == 2) {
             ov::Tensor result2 = this->infer_request.get_output_tensor(1);
             pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, result2.data<float>());  // {1}
-        }else{
+        }
+        else {
             double _, maxValue;    // 最大值，最小值
             cv::minMaxLoc(anomaly_map, &_, &maxValue);
             pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, maxValue);
@@ -209,7 +211,7 @@ public:
  * @param openvino_preprocess   是否使用openvino图片预处理
  */
 void single(string& model_path, string& meta_path, string& image_path, string& save_dir,
-            string& device, bool openvino_preprocess = true){
+    string& device, bool openvino_preprocess = true) {
     // 1.创建推理器
     Inference inference = Inference(model_path, meta_path, device, openvino_preprocess);
 
@@ -231,6 +233,7 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
     // 5.保存显示图片
     // 将mask转化为3通道,不然没法拼接图片
     cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
+
     saveScoreAndImage(result.score, images, image_path, save_dir);
 
     cv::imshow("result", images[2]);
@@ -248,7 +251,7 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
  * @param openvino_preprocess   是否使用openvino图片预处理
  */
 void multi(string& model_path, string& meta_path, string& image_dir, string& save_dir,
-           string& device, bool openvino_preprocess = true){
+    string& device, bool openvino_preprocess = true) {
     // 1.创建推理器
     Inference inference = Inference(model_path, meta_path, device, openvino_preprocess);
 
@@ -280,13 +283,13 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
     }
 
     // 6.统计数据
-    double sumValue = accumulate(begin(times), end(times), 0.0);  // accumulate函数就是求vector和的函数；
-    double meanValue = sumValue / times.size();                   // 求均值
+    double sumValue = accumulate(begin(times), end(times), 0.0); // accumulate函数就是求vector和的函数；
+    double meanValue = sumValue / times.size();                             // 求均值
     cout << "mean infer time: " << meanValue << endl;
 }
 
 
-int main(){
+int main() {
     string model_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/run/optimization/openvino/model.xml";
     string param_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/run/optimization/meta_data.json";
     string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
@@ -295,7 +298,7 @@ int main(){
     // 是否使用openvino图片预处理
     bool openvino_preprocess = true;
     string device = "CPU";
-    single(model_path, param_path, image_path, save_dir,device, openvino_preprocess);
+    single(model_path, param_path, image_path, save_dir, device, openvino_preprocess);
     // multi(model_path, param_path, image_dir, save_dir, device, openvino_preprocess);
     return 0;
 }
