@@ -231,7 +231,6 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
     // 5.保存显示图片
     // 将mask转化为3通道,不然没法拼接图片
     cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
-
     saveScoreAndImage(result.score, images, image_path, save_dir);
 
     cv::imshow("result", images[2]);
@@ -275,6 +274,8 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
         times.push_back(end - start);
 
         // 6.保存图片
+        // 将mask转化为3通道,不然没法拼接图片
+        cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
         saveScoreAndImage(result.score, images, image_path, save_dir);
     }
 

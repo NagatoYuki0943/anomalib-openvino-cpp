@@ -2,7 +2,7 @@
 
 
 MetaData getJson(const string& json_path) {
-    FILE *fp;
+    FILE* fp;
     fopen_s(&fp, json_path.c_str(), "r");
 
     char readBuffer[1000];
@@ -13,12 +13,12 @@ MetaData getJson(const string& json_path) {
 
     float image_threshold = doc["image_threshold"].GetFloat();
     float pixel_threshold = doc["pixel_threshold"].GetFloat();
-    float min             = doc["min"].GetFloat();
-    float max             = doc["max"].GetFloat();
+    float min = doc["min"].GetFloat();
+    float max = doc["max"].GetFloat();
     // 列表分别取出
-    auto infer_size       = doc["infer_size"].GetArray();
-    int infer_height      = infer_size[0].GetInt();
-    int infer_width       = infer_size[1].GetInt();
+    auto infer_size = doc["infer_size"].GetArray();
+    int infer_height = infer_size[0].GetInt();
+    int infer_width = infer_size[1].GetInt();
 
     // cout << image_threshold << endl;
     // cout << pixel_threshold << endl;
@@ -27,7 +27,7 @@ MetaData getJson(const string& json_path) {
     // cout << infer_height << endl;
     // cout << infer_width << endl;
 
-    return MetaData {image_threshold, pixel_threshold, min, max, {infer_height, infer_width}};
+    return MetaData{ image_threshold, pixel_threshold, min, max, {infer_height, infer_width} };
 }
 
 
@@ -53,7 +53,7 @@ void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_p
     // 获取图片文件名
     // 这样基本确保无论使用 \ / 作为分隔符都能找到文件名字
     auto start = image_path.rfind('\\');
-    if (start < 0 || start > image_path.length()){
+    if (start < 0 || start > image_path.length()) {
         start = image_path.rfind('/');
     }
     auto end = image_path.substr(start + 1).rfind('.');
@@ -74,15 +74,15 @@ void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_p
 
 
 cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
-    vector<float> mean = {0.485, 0.456, 0.406};
-    vector<float> std  = {0.229, 0.224, 0.225};
+    vector<float> mean = { 0.485, 0.456, 0.406 };
+    vector<float> std = { 0.229, 0.224, 0.225 };
 
     // 缩放 w h
     cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
 
     // 归一化
     // convertTo直接将所有值除以255,normalize的NORM_MINMAX是将原始数据范围变换到0~1之间,convertTo更符合深度学习的做法
-    resized_image.convertTo(resized_image, CV_32FC3, 1.0/255, 0);
+    resized_image.convertTo(resized_image, CV_32FC3, 1.0 / 255, 0);
     //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
 
     // 标准化
@@ -104,10 +104,10 @@ cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, floa
 }
 
 
-vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData &meta) {
+vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta) {
     // 标准化热力图和得分
     anomaly_map = cvNormalizeMinMax(anomaly_map, meta.pixel_threshold, meta.min, meta.max);
-    pred_score  = cvNormalizeMinMax(pred_score, meta.image_threshold, meta.min, meta.max);
+    pred_score = cvNormalizeMinMax(pred_score, meta.image_threshold, meta.min, meta.max);
 
     // 还原到原图尺寸
     anomaly_map = Resize(anomaly_map, meta.image_size[0], meta.image_size[1], "bilinear");
@@ -147,11 +147,11 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
 
     //背景
     cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10),
-                  cv::Scalar(225, 252, 134), cv::FILLED);
+        cv::Scalar(225, 252, 134), cv::FILLED);
 
     //添加文字
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size,
-                cv::Scalar(0, 0, 0), thickness);
+        cv::Scalar(0, 0, 0), thickness);
 
     return mixed_image;
 }
@@ -163,8 +163,8 @@ cv::Mat compute_mask(cv::Mat& anomaly_map, float threshold, int kernel_size) {
     cv::threshold(mask, mask, threshold, 1, cv::ThresholdTypes::THRESH_BINARY);
 
     // 开操作减少小点
-    auto kernel = cv::getStructuringElement(cv::MorphShapes::MORPH_ELLIPSE, {kernel_size, kernel_size}, {-1, -1});
-    cv::morphologyEx(mask, mask, cv::MorphTypes::MORPH_OPEN, kernel, {-1, -1}, 1);
+    auto kernel = cv::getStructuringElement(cv::MorphShapes::MORPH_ELLIPSE, { kernel_size, kernel_size }, { -1, -1 });
+    cv::morphologyEx(mask, mask, cv::MorphTypes::MORPH_OPEN, kernel, { -1, -1 }, 1);
 
     // 缩放到255,转化为uint
     mask.convertTo(mask, CV_8UC1, 255, 0);
@@ -183,7 +183,7 @@ cv::Mat gen_mask_border(cv::Mat& mask, cv::Mat& image) {
     cv::Canny(mask, r, 128, 255, 3, false);
 
     // 整合为3通道图片
-    vector<cv::Mat> rgb{b, g, r};
+    vector<cv::Mat> rgb{ b, g, r };
     cv::Mat border;
     cv::merge(rgb, border);
 

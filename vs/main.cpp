@@ -89,9 +89,9 @@ public:
 
             // Specify input image format
             ppp.input(0).tensor()
-                .set_color_format(ov::preprocess::ColorFormat::RGB)      // BGR -> RGB
-                .set_element_type(ov::element::f32)                             // u8 -> f32
-                .set_layout(ov::Layout("NCHW"));                 // NHWC -> NCHW
+                .set_color_format(ov::preprocess::ColorFormat::RGB)     // BGR -> RGB
+                .set_element_type(ov::element::f32)                     // u8 -> f32
+                .set_layout(ov::Layout("NCHW"));                        // NHWC -> NCHW
 
             // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
@@ -277,6 +277,8 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
         times.push_back(end - start);
 
         // 6.保存图片
+        // 将mask转化为3通道,不然没法拼接图片
+        cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
         saveScoreAndImage(result.score, images, image_path, save_dir);
     }
 
