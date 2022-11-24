@@ -294,7 +294,7 @@ int main() {
     string param_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/run/optimization/meta_data.json";
     string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
     string image_dir  = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
-    string save_dir   = "D:/ai/code/abnormal/anomalib-patchcore-openvino/cmake/result";
+    string save_dir   = "D:/ai/code/abnormal/anomalib-openvino-cpp/cmake/result";
     // 是否使用openvino图片预处理
     bool openvino_preprocess = true;
     string device = "CPU";
