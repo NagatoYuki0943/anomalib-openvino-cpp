@@ -1,6 +1,6 @@
 # 说明
 
-> 适用于anomalib导出的openvino格式的patchcore模型
+> 适用于anomalib导出的openvino格式的模型
 
 
 
@@ -15,6 +15,8 @@
 > 勾选C++
 >
 > 下载完成后安装
+>
+> [openvino文档](https://docs.openvino.ai/latest/)
 
 ## 下载对应的opencv
 
@@ -85,7 +87,7 @@ include_directories(../include)
 
 - C/C++
 
-  - 附加包含目录  release debug一起包含
+  - 附加包含目录 release debug 都包含
 
     ```python
     D:\ai\openvino\openvino_2022.1.0.643\runtime\include
@@ -98,7 +100,7 @@ include_directories(../include)
 
 - 链接器
 
-  - 附加库目录 release debug分开包含
+  - 附加库目录 release debug 分开包含
 
     ```python
     # debug
@@ -112,7 +114,7 @@ include_directories(../include)
 
   - 输入
 
-    - 附加依赖项  release debug分开包含 (PS: opencv全包含了大多数,但是不知道哪些是用不到的)
+    - 附加依赖项 release debug 分开包含 (PS: opencv全包含了大多数,但是不知道哪些是用不到的)
 
       ```python
       # debug
