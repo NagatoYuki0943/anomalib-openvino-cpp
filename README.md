@@ -147,11 +147,15 @@ include_directories(../include)
 - C/C++
   - 语言 符合模式改为否
 
+## 查看是否缺失dll
+
+> https://github.com/lucasg/Dependencies 这个工具可以查看exe工具是否缺失dll
+
 
 
 # 待解决
 
-## 1.自己的图片预处理结果不对
+## ~~1.自己的图片预处理结果不对~~
 
 ##  ~~2.vs使用cv::imshow会卡住~~
 

@@ -24,4 +24,4 @@ include_directories(D:/ai/openvino/openvino_2022.1.0.643/runtime/include)
 link_libraries(${OpenCV_LIBRARIES}
                 openvino::runtime)
 
-add_executable(main main.cpp utils.cpp opencv_utils.cpp)
+add_executable(main main.cpp utils.cpp opencv_utils.cpp inference.hpp)

@@ -49,7 +49,7 @@ cv::Mat readImage(string& path) {
 }
 
 
-void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir) {
+void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir) {
     // 获取图片文件名
     // 这样基本确保无论使用 \ / 作为分隔符都能找到文件名字
     auto start = image_path.rfind('\\');
@@ -147,11 +147,11 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
 
     //背景
     cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10),
-        cv::Scalar(225, 252, 134), cv::FILLED);
+                  cv::Scalar(225, 252, 134), cv::FILLED);
 
     //添加文字
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size,
-        cv::Scalar(0, 0, 0), thickness);
+                cv::Scalar(0, 0, 0), thickness);
 
     return mixed_image;
 }

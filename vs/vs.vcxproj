@@ -150,6 +150,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inference.hpp" />
     <ClInclude Include="opencv_utils.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

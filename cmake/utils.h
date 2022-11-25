@@ -1,4 +1,5 @@
 #pragma once
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -61,7 +62,7 @@ cv::Mat readImage(string& path);
  * @param image_path 输入图片的路径
  * @param save_dir   保存的路径
  */
-void saveScoreAndImage(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir);
+void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir);
 
 
 /**
