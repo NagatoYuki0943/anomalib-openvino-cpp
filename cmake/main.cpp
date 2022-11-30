@@ -94,8 +94,8 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
 
 
 int main() {
-    string model_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/256/optimization/openvino/model.xml";
-    string param_path = "D:/ai/code/abnormal/anomalib/results/fastflow/mvtec/bottle/256/optimization/meta_data.json";
+    string model_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle/256/optimization/openvino/model.xml";
+    string param_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle/256/optimization/meta_data.json";
     string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
     string image_dir  = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
     string save_dir   = "D:/ai/code/abnormal/anomalib-openvino-cpp/cmake/result"; // 注意目录不会自动创建,要手动创建才会保存

@@ -104,7 +104,11 @@ public:
             ppp.input(0).model().set_layout(ov::Layout("NCHW"));
 
             // Specify output results format
-            ppp.output().tensor().set_element_type(ov::element::f32);
+            ppp.output(0).tensor().set_element_type(ov::element::f32);
+            if (model->outputs().size() == 2){
+                ppp.output(1).tensor().set_element_type(ov::element::f32);
+            }
+
             // Embed above steps in the graph
             model = ppp.build();
 
