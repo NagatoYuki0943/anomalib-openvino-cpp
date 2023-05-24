@@ -94,6 +94,7 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
 
 
 int main() {
+    // 注意使用非patchcore模型时报错可以查看utils.cpp中infer_height和infer_width中的[1] 都改为 [0]，具体查看注释和metadata.json文件
     string model_path = "D:/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/model.xml";
     string param_path = "D:/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/metadata.json";
     string image_path = "D:/code/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";

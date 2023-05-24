@@ -32,23 +32,13 @@ optimization:
 
 ```yaml
 #opencv
-$opencv_path\bin
+$opencv_path\build\x64\vc16\bin
 
 #openvino
 $openvino_path\runtime\bin\intel64\Debug
 $openvino_path\runtime\bin\intel64\Release
 $openvino_path\runtime\3rdparty\tbb\bin
 ```
-
-# 错误
-
-## 找不到`opencv_core_parallel_onetbb455_64d.dll`
-
-> 没有问题，参考https://github.com/opencv/opencv/issues/20113
->
-> debug模式下会显示，release不会显示
-
-
 
 # 关于include文件夹
 
@@ -62,21 +52,9 @@ $openvino_path\runtime\3rdparty\tbb\bin
 >
 > cmake版本要设置 `CMakeLists.txt` 中 opencv，openvino的路径为自己的路径
 
-## 查看是否缺失dll
+# 查看是否缺失dll
 
 > https://github.com/lucasg/Dependencies 这个工具可以查看exe工具是否缺失dll
-
-
-
-# 待解决
-
-## ~~1.自己的图片预处理结果不对~~
-
-##  ~~2.vs使用cv::imshow会卡住~~
-
-> 自己莫名其妙好了。。。
-
-
 
 # 第三方库
 
