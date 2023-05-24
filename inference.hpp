@@ -90,8 +90,8 @@ public:
             // Specify input image format
             ppp.input(0).tensor()
                     .set_color_format(ov::preprocess::ColorFormat::RGB)     // BGR -> RGB
-                    .set_element_type(ov::element::f32)                            // u8 -> f32
-                    .set_layout(ov::Layout("NCHW"));                // NHWC -> NCHW
+                    .set_element_type(ov::element::f32)                     // u8 -> f32
+                    .set_layout(ov::Layout("NCHW"));                        // NHWC -> NCHW
 
             // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
@@ -117,7 +117,6 @@ public:
         return core.compile_model(model, device);
     }
 
-
     /**
      * 模型预热
      */
@@ -128,7 +127,6 @@ public:
         cv::Mat input = cv::Mat(size, CV_8UC3, color);
         this->infer(input);
     }
-
 
     /**
      * 推理单张图片

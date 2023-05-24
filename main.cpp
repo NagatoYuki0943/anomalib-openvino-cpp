@@ -88,7 +88,7 @@ void multi(string& model_path, string& meta_path, string& image_dir, string& sav
 
     // 6.统计数据
     double sumValue = accumulate(begin(times), end(times), 0.0); // accumulate函数就是求vector和的函数；
-    double avgValue = sumValue / times.size();                             // 求均值
+    double avgValue = sumValue / times.size();                   // 求均值
     cout << "avg infer time: " << avgValue << " ms" << endl;
 }
 
