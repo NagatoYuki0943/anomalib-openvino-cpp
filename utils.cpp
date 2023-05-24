@@ -16,9 +16,8 @@ MetaData getJson(const string& json_path) {
     float min = doc["min"].GetFloat();
     float max = doc["max"].GetFloat();
     // 列表分别取出
-    auto infer_size = doc["infer_size"].GetArray();
-    int infer_height = infer_size[0].GetInt();
-    int infer_width = infer_size[1].GetInt();
+    int infer_height = doc["transform"]["transform"]["transforms"][1]["height"].GetInt();
+    int infer_width = doc["transform"]["transform"]["transforms"][1]["width"].GetInt();
 
     // cout << image_threshold << endl;
     // cout << pixel_threshold << endl;

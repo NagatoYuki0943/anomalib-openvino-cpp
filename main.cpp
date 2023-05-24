@@ -6,36 +6,36 @@
 using namespace std;
 
 /**
- * å•å¼ å›¾ç‰‡æ¨ç†
- * @param model_path    æ¨¡å‹è·¯å¾„
- * @param meta_path     è¶…å‚æ•°è·¯å¾„
- * @param image_path    å›¾ç‰‡è·¯å¾„
- * @param save_dir      ä¿å­˜è·¯å¾„
- * @param device        CPU or GPU æ¨ç†
- * @param openvino_preprocess   æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
+ * µ¥ÕÅÍ¼Æ¬ÍÆÀí
+ * @param model_path    Ä£ĞÍÂ·¾¶
+ * @param meta_path     ³¬²ÎÊıÂ·¾¶
+ * @param image_path    Í¼Æ¬Â·¾¶
+ * @param save_dir      ±£´æÂ·¾¶
+ * @param device        CPU or GPU ÍÆÀí
+ * @param openvino_preprocess   ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
  */
 void single(string& model_path, string& meta_path, string& image_path, string& save_dir,
     string& device, bool openvino_preprocess = true) {
-    // 1.åˆ›å»ºæ¨ç†å™¨
+    // 1.´´½¨ÍÆÀíÆ÷
     Inference inference = Inference(model_path, meta_path, device, openvino_preprocess);
 
-    // 2.è¯»å–å›¾ç‰‡
+    // 2.¶ÁÈ¡Í¼Æ¬
     cv::Mat image = readImage(image_path);
 
     // time
     auto start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // 3.æ¨ç†å•å¼ å›¾ç‰‡
+    // 3.ÍÆÀíµ¥ÕÅÍ¼Æ¬
     Result result = inference.infer(image);
     cout << "score: " << result.score << endl;
 
-    // 4.ç”Ÿæˆå…¶ä»–å›¾ç‰‡(mask,maskè¾¹ç¼˜,çƒ­åŠ›å›¾å’ŒåŸå›¾çš„å åŠ )
+    // 4.Éú³ÉÆäËûÍ¼Æ¬(mask,mask±ßÔµ,ÈÈÁ¦Í¼ºÍÔ­Í¼µÄµş¼Ó)
     vector<cv::Mat> images = gen_images(image, result.anomaly_map, result.score);
     // time
     auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     cout << "infer time: " << end - start << " ms" << endl;
 
-    // 5.ä¿å­˜æ˜¾ç¤ºå›¾ç‰‡
-    // å°†maskè½¬åŒ–ä¸º3é€šé“,ä¸ç„¶æ²¡æ³•æ‹¼æ¥å›¾ç‰‡
+    // 5.±£´æÏÔÊ¾Í¼Æ¬
+    // ½«mask×ª»¯Îª3Í¨µÀ,²»È»Ã»·¨Æ´½ÓÍ¼Æ¬
     cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
 
     saveScoreAndImages(result.score, images, image_path, save_dir);
@@ -46,60 +46,60 @@ void single(string& model_path, string& meta_path, string& image_path, string& s
 
 
 /**
- * å¤šå¼ å›¾ç‰‡æ¨ç†
- * @param model_path    æ¨¡å‹è·¯å¾„
- * @param meta_path     è¶…å‚æ•°è·¯å¾„
- * @param image_dir     å›¾ç‰‡æ–‡ä»¶å¤¹è·¯å¾„
- * @param save_dir      ä¿å­˜è·¯å¾„
- * @param device        CPU or GPU æ¨ç†
- * @param openvino_preprocess   æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
+ * ¶àÕÅÍ¼Æ¬ÍÆÀí
+ * @param model_path    Ä£ĞÍÂ·¾¶
+ * @param meta_path     ³¬²ÎÊıÂ·¾¶
+ * @param image_dir     Í¼Æ¬ÎÄ¼ş¼ĞÂ·¾¶
+ * @param save_dir      ±£´æÂ·¾¶
+ * @param device        CPU or GPU ÍÆÀí
+ * @param openvino_preprocess   ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
  */
 void multi(string& model_path, string& meta_path, string& image_dir, string& save_dir,
     string& device, bool openvino_preprocess = true) {
-    // 1.åˆ›å»ºæ¨ç†å™¨
+    // 1.´´½¨ÍÆÀíÆ÷
     Inference inference = Inference(model_path, meta_path, device, openvino_preprocess);
 
-    // 2.è¯»å–å…¨éƒ¨å›¾ç‰‡è·¯å¾„
+    // 2.¶ÁÈ¡È«²¿Í¼Æ¬Â·¾¶
     vector<cv::String> paths = getImagePaths(image_dir);
 
     vector<float> times;
     for (auto& image_path : paths) {
-        // 3.è¯»å–å•å¼ å›¾ç‰‡
+        // 3.¶ÁÈ¡µ¥ÕÅÍ¼Æ¬
         cv::Mat image = readImage(image_path);
 
         // time
         auto start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        // 4.æ¨ç†å•å¼ å›¾ç‰‡
+        // 4.ÍÆÀíµ¥ÕÅÍ¼Æ¬
         Result result = inference.infer(image);
         cout << "score: " << result.score << endl;
 
-        // 5.å›¾ç‰‡ç”Ÿæˆå…¶ä»–å›¾ç‰‡(mask,maskè¾¹ç¼˜,çƒ­åŠ›å›¾å’ŒåŸå›¾çš„å åŠ )
+        // 5.Í¼Æ¬Éú³ÉÆäËûÍ¼Æ¬(mask,mask±ßÔµ,ÈÈÁ¦Í¼ºÍÔ­Í¼µÄµş¼Ó)
         vector<cv::Mat> images = gen_images(image, result.anomaly_map, result.score);
         // time
         auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         cout << "infer time: " << end - start << " ms" << endl;
         times.push_back(end - start);
 
-        // 6.ä¿å­˜å›¾ç‰‡
-        // å°†maskè½¬åŒ–ä¸º3é€šé“,ä¸ç„¶æ²¡æ³•æ‹¼æ¥å›¾ç‰‡
+        // 6.±£´æÍ¼Æ¬
+        // ½«mask×ª»¯Îª3Í¨µÀ,²»È»Ã»·¨Æ´½ÓÍ¼Æ¬
         cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
         saveScoreAndImages(result.score, images, image_path, save_dir);
     }
 
-    // 6.ç»Ÿè®¡æ•°æ®
-    double sumValue = accumulate(begin(times), end(times), 0.0); // accumulateå‡½æ•°å°±æ˜¯æ±‚vectorå’Œçš„å‡½æ•°ï¼›
-    double avgValue = sumValue / times.size();                             // æ±‚å‡å€¼
+    // 6.Í³¼ÆÊı¾İ
+    double sumValue = accumulate(begin(times), end(times), 0.0); // accumulateº¯Êı¾ÍÊÇÇóvectorºÍµÄº¯Êı£»
+    double avgValue = sumValue / times.size();                             // Çó¾ùÖµ
     cout << "avg infer time: " << avgValue << " ms" << endl;
 }
 
 
 int main() {
-    string model_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle/256/optimization/openvino/model.xml";
-    string param_path = "D:/ai/code/abnormal/anomalib/results/patchcore/mvtec/bottle/256/optimization/meta_data.json";
-    string image_path = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
-    string image_dir  = "D:/ai/code/abnormal/anomalib/datasets/MVTec/bottle/test/broken_large";
-    string save_dir   = "D:/ai/code/abnormal/anomalib-openvino-cpp/vs/result"; // æ³¨æ„ç›®å½•ä¸ä¼šè‡ªåŠ¨åˆ›å»º,è¦æ‰‹åŠ¨åˆ›å»ºæ‰ä¼šä¿å­˜
-    // æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
+    string model_path = "D:/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/model.xml";
+    string param_path = "D:/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/metadata.json";
+    string image_path = "D:/code/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
+    string image_dir  = "D:/code/anomalib/datasets/MVTec/bottle/test/broken_large";
+    string save_dir   = "D:/code/anomalib-openvino-cpp/result"; // ×¢ÒâÄ¿Â¼²»»á×Ô¶¯´´½¨,ÒªÊÖ¶¯´´½¨²Å»á±£´æ
+    // ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
     bool openvino_preprocess = true;
     string device = "CPU";
     single(model_path, param_path, image_path, save_dir, device, openvino_preprocess);
