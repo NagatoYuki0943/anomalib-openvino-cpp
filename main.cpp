@@ -3,24 +3,24 @@
 
 
 int main() {
-    // ×¢ÒâÊ¹ÓÃ·ÇpatchcoreÄ£ĞÍÊ±±¨´í¿ÉÒÔ²é¿´utils.cppÖĞinfer_heightºÍinfer_widthÖĞµÄ[1] ¶¼¸ÄÎª [0]£¬¾ßÌå²é¿´×¢ÊÍºÍmetadata.jsonÎÄ¼ş
+    // patchcoreæ¨¡å‹è®­ç»ƒé…ç½®æ–‡ä»¶åˆ é™¤äº†center_crop
     string model_path = "D:/ml/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/model.xml";
     string meta_path  = "D:/ml/code/anomalib/results/patchcore/mvtec/bottle/run/weights/openvino/metadata.json";
     string image_path = "D:/ml/code/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
     string image_dir  = "D:/ml/code/anomalib/datasets/MVTec/bottle/test/broken_large";
-    string save_dir   = "D:/ml/code/anomalib-openvino-cpp/result"; // ×¢ÒâÄ¿Â¼²»»á×Ô¶¯´´½¨,ÒªÊÖ¶¯´´½¨²Å»á±£´æ
+    string save_dir   = "D:/ml/code/anomalib-openvino-cpp/result"; // æ³¨æ„ç›®å½•ä¸ä¼šè‡ªåŠ¨åˆ›å»º,è¦æ‰‹åŠ¨åˆ›å»ºæ‰ä¼šä¿å­˜
     string device     = "CPU";
-    bool openvino_preprocess = true;    // ÊÇ·ñÊ¹ÓÃopenvinoÍ¼Æ¬Ô¤´¦Àí
+    bool openvino_preprocess = true;    // æ˜¯å¦ä½¿ç”¨openvinoå›¾ç‰‡é¢„å¤„ç†
 
-    // ´´½¨ÍÆÀíÆ÷
+    // åˆ›å»ºæ¨ç†å™¨
     auto inference = Inference(model_path, meta_path, device, openvino_preprocess);
 
-    // µ¥ÕÅÍ¼Æ¬ÍÆÀí
+    // å•å¼ å›¾ç‰‡æ¨ç†
     cv::Mat result = inference.single(image_path, save_dir);
     cv::imshow("result", result);
     cv::waitKey(0);
 
-    // ¶àÕÅÍ¼Æ¬ÍÆÀí
+    // å¤šå¼ å›¾ç‰‡æ¨ç†
     // inference.multi(image_dir, save_dir);
     return 0;
 }
