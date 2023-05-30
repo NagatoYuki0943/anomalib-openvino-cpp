@@ -28,96 +28,96 @@ public:
 
 
 /**
- * »ñÈ¡jsonÅäÖÃÎÄ¼ş
- * @param json_path ÅäÖÃÎÄ¼şÂ·¾¶
+ * è·å–jsoné…ç½®æ–‡ä»¶
+ * @param json_path é…ç½®æ–‡ä»¶è·¯å¾„
  * @return
  */
 MetaData getJson(const string& json_path);
 
 
 /**
- * »ñÈ¡ÎÄ¼ş¼ĞÏÂÈ«²¿Í¼Æ¬µÄ¾ø¶ÔÂ·¾¶
+ * è·å–æ–‡ä»¶å¤¹ä¸‹å…¨éƒ¨å›¾ç‰‡çš„ç»å¯¹è·¯å¾„
  *
- * @param path          Í¼Æ¬ÎÄ¼ş¼ĞÂ·¾¶
- * @return result       È«²¿Í¼Æ¬¾ø¶ÔÂ·¾¶ÁĞ±í
+ * @param path          å›¾ç‰‡æ–‡ä»¶å¤¹è·¯å¾„
+ * @return result       å…¨éƒ¨å›¾ç‰‡ç»å¯¹è·¯å¾„åˆ—è¡¨
  */
 vector<cv::String> getImagePaths(string& path);
 
 
 
 /**
- * ¶ÁÈ¡Í¼Ïñ BGR2RGB
+ * è¯»å–å›¾åƒ BGR2RGB
  *
- * @param path  Í¼Æ¬Â·¾¶
- * @return      Í¼Æ¬
+ * @param path  å›¾ç‰‡è·¯å¾„
+ * @return      å›¾ç‰‡
  */
 cv::Mat readImage(string& path);
 
 
 /**
- * ±£´æÍ¼Æ¬ºÍ·ÖÊı
+ * ä¿å­˜å›¾ç‰‡å’Œåˆ†æ•°
  *
- * @param score      µÃ·Ö
- * @param mixed_image_with_label »ìºÏºóµÄÍ¼Æ¬
- * @param image_path ÊäÈëÍ¼Æ¬µÄÂ·¾¶
- * @param save_dir   ±£´æµÄÂ·¾¶
+ * @param score      å¾—åˆ†
+ * @param mixed_image_with_label æ··åˆåçš„å›¾ç‰‡
+ * @param image_path è¾“å…¥å›¾ç‰‡çš„è·¯å¾„
+ * @param save_dir   ä¿å­˜çš„è·¯å¾„
  */
 void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir);
 
 
 /**
- * Í¼Æ¬Ô¤´¦Àí
- * @param image Ô¤´¦ÀíÍ¼Æ¬
- * @return      ¾­¹ıÔ¤´¦ÀíµÄÍ¼Æ¬
+ * å›¾ç‰‡é¢„å¤„ç†
+ * @param image é¢„å¤„ç†å›¾ç‰‡
+ * @return      ç»è¿‡é¢„å¤„ç†çš„å›¾ç‰‡
  */
 cv::Mat pre_process(cv::Mat& image, MetaData& meta);
 
 
 /**
- * opencv±ê×¼»¯ÈÈÁ¦Í¼
+ * opencvæ ‡å‡†åŒ–çƒ­åŠ›å›¾
  *
- * @param targets       ÈÈÁ¦Í¼
- * @param threshold     ãĞÖµ,metaÖĞµÄ²ÎÊı
- * @param min_val       ×îĞ¡Öµ,metaÖĞµÄ²ÎÊı
- * @param max_val       ×î´óÖµ,metaÖĞµÄ²ÎÊı
- * @return normalized   ¾­¹ı±ê×¼»¯ºóµÄ½á¹û
+ * @param targets       çƒ­åŠ›å›¾
+ * @param threshold     é˜ˆå€¼,metaä¸­çš„å‚æ•°
+ * @param min_val       æœ€å°å€¼,metaä¸­çš„å‚æ•°
+ * @param max_val       æœ€å¤§å€¼,metaä¸­çš„å‚æ•°
+ * @return normalized   ç»è¿‡æ ‡å‡†åŒ–åçš„ç»“æœ
  */
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val);
 
 
 /**
- * ºó´¦Àí²¿·Ö,±ê×¼»¯ÈÈÁ¦Í¼ºÍµÃ·Ö,»¹Ô­ÈÈÁ¦Í¼µ½Ô­Í¼³ß´ç
+ * åå¤„ç†éƒ¨åˆ†,æ ‡å‡†åŒ–çƒ­åŠ›å›¾å’Œå¾—åˆ†,è¿˜åŸçƒ­åŠ›å›¾åˆ°åŸå›¾å°ºå¯¸
  *
- * @param anomaly_map   Î´¾­¹ı±ê×¼»¯µÄÈÈÁ¦Í¼
- * @param pred_score    Î´¾­¹ı±ê×¼»¯µÄµÃ·Ö
- * @param meta          meta³¬²ÎÊı
- * @return result		ÈÈÁ¦Í¼ºÍµÃ·Övector
+ * @param anomaly_map   æœªç»è¿‡æ ‡å‡†åŒ–çš„çƒ­åŠ›å›¾
+ * @param pred_score    æœªç»è¿‡æ ‡å‡†åŒ–çš„å¾—åˆ†
+ * @param meta          metaè¶…å‚æ•°
+ * @return result		çƒ­åŠ›å›¾å’Œå¾—åˆ†vector
  */
 vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta);
 
 /**
- * µş¼ÓÍ¼Æ¬
+ * å åŠ å›¾ç‰‡
  *
- * @param anomaly_map   »ìºÏºóµÄÍ¼Æ¬
- * @param origin_image  Ô­Ê¼Í¼Æ¬
- * @return result       µş¼ÓºóµÄÍ¼Ïñ
+ * @param anomaly_map   æ··åˆåçš„å›¾ç‰‡
+ * @param origin_image  åŸå§‹å›¾ç‰‡
+ * @return result       å åŠ åçš„å›¾åƒ
  */
 cv::Mat superimposeAnomalyMap(cv::Mat& anomaly_map, cv::Mat& origin_image);
 
 
 /**
- * ¸øÍ¼Æ¬Ìí¼Ó±êÇ©
+ * ç»™å›¾ç‰‡æ·»åŠ æ ‡ç­¾
  *
- * @param mixed_image   »ìºÏºóµÄÍ¼Æ¬
- * @param score         µÃ·Ö
- * @param font          ×ÖÌå
- * @return mixed_image  Ìí¼Ó±êÇ©µÄÍ¼Ïñ
+ * @param mixed_image   æ··åˆåçš„å›¾ç‰‡
+ * @param score         å¾—åˆ†
+ * @param font          å­—ä½“
+ * @return mixed_image  æ·»åŠ æ ‡ç­¾çš„å›¾åƒ
  */
 cv::Mat addLabel(cv::Mat& mixed_image, float score, int font = cv::FONT_HERSHEY_PLAIN);
 
 
 /**
- * ÍÆÀí½á¹û£ºÈÈÁ¦Í¼ + µÃ·Ö
+ * æ¨ç†ç»“æœï¼šçƒ­åŠ›å›¾ + å¾—åˆ†
  */
 struct Result{
 public:
@@ -127,33 +127,33 @@ public:
 
 
 /**
- * ¼ÆËãmask
+ * è®¡ç®—mask
  *
- * @param anomaly_map ÈÈÁ¦Í¼
- * @param threshold   ¶şÖµ»¯ãĞÖµ
- * @param kernel_size ¿ª²Ù×÷kernel_size
+ * @param anomaly_map çƒ­åŠ›å›¾
+ * @param threshold   äºŒå€¼åŒ–é˜ˆå€¼
+ * @param kernel_size å¼€æ“ä½œkernel_size
  * @return mask
  */
 cv::Mat compute_mask(cv::Mat& anomaly_map, float threshold=0.5, int kernel_size=1);
 
 
 /**
- * ¼ÆËãmask±ß½ç²¢»ìºÏµ½Ô­Í¼
+ * è®¡ç®—maskè¾¹ç•Œå¹¶æ··åˆåˆ°åŸå›¾
  *
  * @param mask  mask
- * @param image Ô­Í¼
- * @return      »ìºÏmask±ß½çµÄÔ­Í¼
+ * @param image åŸå›¾
+ * @return      æ··åˆmaskè¾¹ç•Œçš„åŸå›¾
  */
 cv::Mat gen_mask_border(cv::Mat& mask, cv::Mat& image);
 
 
 /**
- * Éú³Émask,mask±ßÔµ,ÈÈÁ¦Í¼ºÍÔ­Í¼µÄµş¼Ó
+ * ç”Ÿæˆmask,maskè¾¹ç¼˜,çƒ­åŠ›å›¾å’ŒåŸå›¾çš„å åŠ 
  *
- * @param image        Ô­Í¼
- * @param anomaly_map  ÈÈÁ¦Í¼
- * @param score        µÃ·Ö
- * @param threshold    ÈÈÁ¦Í¼¶şÖµ»¯ãĞÖµ
+ * @param image        åŸå›¾
+ * @param anomaly_map  çƒ­åŠ›å›¾
+ * @param score        å¾—åˆ†
+ * @param threshold    çƒ­åŠ›å›¾äºŒå€¼åŒ–é˜ˆå€¼
  * @return
  */
 vector<cv::Mat> gen_images(cv::Mat& image, cv::Mat& anomaly_map, float score, float threshold=0.5);

@@ -28,7 +28,7 @@ cv::Mat Resize(const cv::Mat& src, int dst_height, int dst_width,
 cv::Mat Crop(const cv::Mat& src, int top, int left, int bottom, int right);
 
 /**
- * @brief 0~255 -> 0~1 
+ * @brief 0~255 -> 0~1
  */
 cv::Mat Divide(const cv::Mat& src, float divide=255.0);
 

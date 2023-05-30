@@ -15,7 +15,7 @@ MetaData getJson(const string& json_path) {
     float pixel_threshold = doc["pixel_threshold"].GetFloat();
     float min = doc["min"].GetFloat();
     float max = doc["max"].GetFloat();
-    // ÁĞ±í·Ö±ğÈ¡³ö
+    // åˆ—è¡¨åˆ†åˆ«å–å‡º
     int infer_height = doc["transform"]["transform"]["transforms"][0]["height"].GetInt();
     int infer_width = doc["transform"]["transform"]["transforms"][0]["width"].GetInt();
 
@@ -49,8 +49,8 @@ cv::Mat readImage(string& path) {
 
 
 void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir) {
-    // »ñÈ¡Í¼Æ¬ÎÄ¼şÃû
-    // ÕâÑù»ù±¾È·±£ÎŞÂÛÊ¹ÓÃ \ / ×÷Îª·Ö¸ô·û¶¼ÄÜÕÒµ½ÎÄ¼şÃû×Ö
+    // è·å–å›¾ç‰‡æ–‡ä»¶å
+    // è¿™æ ·åŸºæœ¬ç¡®ä¿æ— è®ºä½¿ç”¨ \ / ä½œä¸ºåˆ†éš”ç¬¦éƒ½èƒ½æ‰¾åˆ°æ–‡ä»¶åå­—
     auto start = image_path.rfind('\\');
     if (start < 0 || start > image_path.length()) {
         start = image_path.rfind('/');
@@ -58,7 +58,7 @@ void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_
     auto end = image_path.substr(start + 1).rfind('.');
     auto image_name = image_path.substr(start + 1).substr(0, end);  // 000
 
-    // Ğ´ÈëµÃ·Ö
+    // å†™å…¥å¾—åˆ†
     ofstream ofs;
     ofs.open(save_dir + "/" + image_name + ".txt", ios::out);
     ofs << score;
@@ -67,7 +67,7 @@ void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_
     cv::Mat res;
     cv::hconcat(images, res);
 
-    // Ğ´ÈëÍ¼Æ¬
+    // å†™å…¥å›¾ç‰‡
     cv::imwrite(save_dir + "/" + image_name + ".jpg", res);
 }
 
@@ -76,15 +76,15 @@ cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
     vector<float> mean = { 0.485, 0.456, 0.406 };
     vector<float> std = { 0.229, 0.224, 0.225 };
 
-    // Ëõ·Å w h
+    // ç¼©æ”¾ w h
     cv::Mat resized_image = Resize(image, meta.infer_size[0], meta.infer_size[1], "bilinear");
 
-    // ¹éÒ»»¯
-    // convertToÖ±½Ó½«ËùÓĞÖµ³ıÒÔ255,normalizeµÄNORM_MINMAXÊÇ½«Ô­Ê¼Êı¾İ·¶Î§±ä»»µ½0~1Ö®¼ä,convertTo¸ü·ûºÏÉî¶ÈÑ§Ï°µÄ×ö·¨
+    // å½’ä¸€åŒ–
+    // convertToç›´æ¥å°†æ‰€æœ‰å€¼é™¤ä»¥255,normalizeçš„NORM_MINMAXæ˜¯å°†åŸå§‹æ•°æ®èŒƒå›´å˜æ¢åˆ°0~1ä¹‹é—´,convertToæ›´ç¬¦åˆæ·±åº¦å­¦ä¹ çš„åšæ³•
     resized_image.convertTo(resized_image, CV_32FC3, 1.0 / 255, 0);
     //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
 
-    // ±ê×¼»¯
+    // æ ‡å‡†åŒ–
     resized_image = Normalize(resized_image, mean, std);
     return resized_image;
 }
@@ -93,42 +93,42 @@ cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val) {
     auto normalized = ((targets - threshold) / (max_val - min_val)) + 0.5;
     cv::Mat normalized1;
-    // normalized = np.clip(normalized, 0, 1) È¥³ıĞ¡ÓÚ0ºÍ´óÓÚ1µÄ
-    // ÉèÖÃÉÏÏÂÏŞ: https://blog.csdn.net/simonyucsdy/article/details/106525717
-    // ÉèÖÃÉÏÏŞÎª1
+    // normalized = np.clip(normalized, 0, 1) å»é™¤å°äº0å’Œå¤§äº1çš„
+    // è®¾ç½®ä¸Šä¸‹é™: https://blog.csdn.net/simonyucsdy/article/details/106525717
+    // è®¾ç½®ä¸Šé™ä¸º1
     cv::threshold(normalized, normalized1, 1, 1, cv::ThresholdTypes::THRESH_TRUNC);
-    // ÉèÖÃÏÂÏŞÎª0
+    // è®¾ç½®ä¸‹é™ä¸º0
     cv::threshold(normalized1, normalized1, 0, 0, cv::ThresholdTypes::THRESH_TOZERO);
     return normalized1;
 }
 
 
 vector<cv::Mat> post_process(cv::Mat& anomaly_map, cv::Mat& pred_score, MetaData& meta) {
-    // ±ê×¼»¯ÈÈÁ¦Í¼ºÍµÃ·Ö
+    // æ ‡å‡†åŒ–çƒ­åŠ›å›¾å’Œå¾—åˆ†
     anomaly_map = cvNormalizeMinMax(anomaly_map, meta.pixel_threshold, meta.min, meta.max);
     pred_score = cvNormalizeMinMax(pred_score, meta.image_threshold, meta.min, meta.max);
 
-    // »¹Ô­µ½Ô­Í¼³ß´ç
+    // è¿˜åŸåˆ°åŸå›¾å°ºå¯¸
     anomaly_map = Resize(anomaly_map, meta.image_size[0], meta.image_size[1], "bilinear");
 
-    // ·µ»ØÈÈÁ¦Í¼ºÍµÃ·Ö
+    // è¿”å›çƒ­åŠ›å›¾å’Œå¾—åˆ†
     return vector<cv::Mat>{anomaly_map, pred_score};
 }
 
 
 cv::Mat superimposeAnomalyMap(cv::Mat& anomaly_map, cv::Mat& origin_image) {
     auto anomaly = anomaly_map.clone();
-    // ¹éÒ»»¯£¬Í¼Æ¬Ğ§¹û¸üÃ÷ÏÔ
-    //python´úÂë£º anomaly_map = (anomaly - anomaly.min()) / np.ptp(anomaly) np.ptp()º¯ÊıÊµÏÖµÄ¹¦ÄÜµÈÍ¬ÓÚnp.max(array) - np.min(array)
-    double minValue, maxValue;    // ×î´óÖµ£¬×îĞ¡Öµ
+    // å½’ä¸€åŒ–ï¼Œå›¾ç‰‡æ•ˆæœæ›´æ˜æ˜¾
+    //pythonä»£ç ï¼š anomaly_map = (anomaly - anomaly.min()) / np.ptp(anomaly) np.ptp()å‡½æ•°å®ç°çš„åŠŸèƒ½ç­‰åŒäºnp.max(array) - np.min(array)
+    double minValue, maxValue;    // æœ€å¤§å€¼ï¼Œæœ€å°å€¼
     cv::minMaxLoc(anomaly, &minValue, &maxValue);
     anomaly = (anomaly - minValue) / (maxValue - minValue);
 
-    //×ª»»ÎªÕûĞÎ
+    //è½¬æ¢ä¸ºæ•´å½¢
     anomaly.convertTo(anomaly, CV_8UC1, 255, 0);
-    //µ¥Í¨µÀ×ª»¯Îª3Í¨µÀ
+    //å•é€šé“è½¬åŒ–ä¸º3é€šé“
     cv::applyColorMap(anomaly, anomaly, cv::ColormapTypes::COLORMAP_JET);
-    //ºÏ²¢Ô­Í¼ºÍÈÈÁ¦Í¼
+    //åˆå¹¶åŸå›¾å’Œçƒ­åŠ›å›¾
     cv::Mat combine;
     cv::addWeighted(anomaly, 0.4, origin_image, 0.6, 0, combine);
 
@@ -144,11 +144,11 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
     cv::Size textsize = cv::getTextSize(text, font, font_size, thickness, &baseline);
     //cout << textsize << endl; //[1627 x 65]
 
-    //±³¾°
+    //èƒŒæ™¯
     cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10),
                   cv::Scalar(225, 252, 134), cv::FILLED);
 
-    //Ìí¼ÓÎÄ×Ö
+    //æ·»åŠ æ–‡å­—
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size,
                 cv::Scalar(0, 0, 0), thickness);
 
@@ -158,14 +158,14 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
 
 cv::Mat compute_mask(cv::Mat& anomaly_map, float threshold, int kernel_size) {
     cv::Mat mask = anomaly_map.clone();
-    // ¶şÖµ»¯ https://blog.csdn.net/weixin_42296411/article/details/80901080
+    // äºŒå€¼åŒ– https://blog.csdn.net/weixin_42296411/article/details/80901080
     cv::threshold(mask, mask, threshold, 1, cv::ThresholdTypes::THRESH_BINARY);
 
-    // ¿ª²Ù×÷¼õÉÙĞ¡µã
+    // å¼€æ“ä½œå‡å°‘å°ç‚¹
     auto kernel = cv::getStructuringElement(cv::MorphShapes::MORPH_ELLIPSE, { kernel_size, kernel_size }, { -1, -1 });
     cv::morphologyEx(mask, mask, cv::MorphTypes::MORPH_OPEN, kernel, { -1, -1 }, 1);
 
-    // Ëõ·Åµ½255,×ª»¯Îªuint
+    // ç¼©æ”¾åˆ°255,è½¬åŒ–ä¸ºuint
     mask.convertTo(mask, CV_8UC1, 255, 0);
 
     return mask;
@@ -181,12 +181,12 @@ cv::Mat gen_mask_border(cv::Mat& mask, cv::Mat& image) {
     // cv::morphologyEx(mask, mask_dilation, cv::MorphTypes::MORPH_CLOSE, kernel, {-1, -1}, 1);
     cv::Canny(mask, r, 128, 255, 3, false);
 
-    // ÕûºÏÎª3Í¨µÀÍ¼Æ¬
+    // æ•´åˆä¸º3é€šé“å›¾ç‰‡
     vector<cv::Mat> rgb{ b, g, r };
     cv::Mat border;
     cv::merge(rgb, border);
 
-    // ±ßÔµºÍÔ­Í¼Ïà¼Ó
+    // è¾¹ç¼˜å’ŒåŸå›¾ç›¸åŠ 
     // border = image + border;
     cv::addWeighted(border, 0.4, image, 0.6, 0, border);
     return border;
@@ -197,16 +197,16 @@ vector<cv::Mat> gen_images(cv::Mat& image, cv::Mat& anomaly_map, float score, fl
     // 0.rgb2bgr
     cv::cvtColor(image, image, cv::ColorConversionCodes::COLOR_RGB2BGR);    // RGB2BGR
 
-    // 1.¼ÆËãmask
+    // 1.è®¡ç®—mask
     cv::Mat mask = compute_mask(anomaly_map, threshold);
 
-    // 2.¼ÆËãmaskÍâ±ß½ç
+    // 2.è®¡ç®—maskå¤–è¾¹ç•Œ
     cv::Mat border = gen_mask_border(mask, image);
 
-    // 3.µş¼ÓÔ­Í¼ºÍÈÈÁ¦Í¼
+    // 3.å åŠ åŸå›¾å’Œçƒ­åŠ›å›¾
     cv::Mat superimposed_map = superimposeAnomalyMap(anomaly_map, image);
 
-    // 4.¸øÍ¼Æ¬Ìí¼Ó·ÖÊı
+    // 4.ç»™å›¾ç‰‡æ·»åŠ åˆ†æ•°
     superimposed_map = addLabel(superimposed_map, score);
     return vector<cv::Mat>{mask, border, superimposed_map};
 }
