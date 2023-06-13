@@ -11,7 +11,7 @@ set(OpenCV_DIR D:/ml/opencv/build)
 find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
     message("OpenCV_INCLUDE_DIRS: " ${OpenCV_INCLUDE_DIRS})
-    message("OpenCV_LIBRARIES: " ${OpenCV_LIBRARIES})
+    message("OpenCV_LIBS: " ${OpenCV_LIBS})
 endif()
 include_directories(${OpenCV_INCLUDE_DIRS})
 
@@ -21,7 +21,7 @@ find_package(OpenVINO REQUIRED)
 include_directories(D:/ml/w_openvino_toolkit_windows/runtime/include)
 
 # 链接所有库，不指定cpp文件
-link_libraries(${OpenCV_LIBRARIES}
+link_libraries(${OpenCV_LIBS}
                 openvino::runtime)
 
 add_executable(main main.cpp utils.cpp opencv_utils.cpp inference.hpp)
