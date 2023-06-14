@@ -91,7 +91,7 @@ public:
             ppp.input(0).tensor()
                 .set_color_format(ov::preprocess::ColorFormat::RGB)     // BGR -> RGB
                 .set_element_type(ov::element::f32)                     // u8 -> f32
-                .set_layout(ov::Layout("NCHW"));                        // NHWC -> NCHW
+                .set_layout(ov::Layout("HWC"));                         // HWC NHWC NCHW
 
         // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
@@ -140,29 +140,18 @@ public:
         // 2.图片预处理
         cv::Mat resized_image;
         if (this->openvino_preprocess) {
-            // 不需要resize,blobFromImage会resize
-            resized_image = image;
+            cv::resize(image, resized_image, { this->meta.infer_size[0], this->meta.infer_size[1] });
+            resized_image.convertTo(resized_image, CV_32FC3, 1.0, 0);
         }
         else {
             resized_image = pre_process(image, meta);
+            // [H, W, C] -> [N, C, H, W]
+            resized_image = cv::dnn::blobFromImage(resized_image);
         }
-        // [H, W, C] -> [N, C, H, W]
-        // 这里只转换维度,其他预处理都做了,python版本是否使用openvino图片预处理都需要这一步,C++只是自己的预处理需要这一步
-        // openvino如果使用这一步的话需要将输入的类型由 u8 转换为 f32, Layout 由 NHWC 改为 NCHW  (38, 39行)
-        resized_image = cv::dnn::blobFromImage(resized_image, 1.0,
-            { this->meta.infer_size[1], this->meta.infer_size[0] },
-            { 0, 0, 0 },
-            false, false, CV_32F);
-
-        // 输入全为1测试
-        // cv::Size size = cv::Size(224, 224);
-        // cv::Scalar color = cv::Scalar(1, 1, 1);
-        // resized_image = cv::Mat(size, CV_32FC3, color);
 
         // 3.从图像创建tensor
-        auto* input_data = (float*)resized_image.data;
         ov::Tensor input_tensor = ov::Tensor(this->compiled_model.input(0).get_element_type(),
-            this->compiled_model.input(0).get_shape(), input_data);
+            this->compiled_model.input(0).get_shape(), (float*)resized_image.data);
 
         // 4.推理
         this->infer_request.set_input_tensor(input_tensor);
