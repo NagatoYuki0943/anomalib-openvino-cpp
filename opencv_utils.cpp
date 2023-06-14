@@ -52,12 +52,12 @@ cv::Mat Normalize(cv::Mat& src, const std::vector<float>& mean, const std::vecto
 
     auto _mean = mean;
     auto _std = std;
-    for (auto i = mean.size(); i < 4; ++i) {
+    for (auto i = mean.size(); i < 3; ++i) {
         _mean.push_back(0.);
         _std.push_back(1.0);
     }
-    cv::Scalar mean_scalar(_mean[0], _mean[1], _mean[2], _mean[3]);
-    cv::Scalar std_scalar(1.0 / _std[0], 1.0 / _std[1], 1.0 / _std[2], 1.0 / _std[3]);
+    cv::Scalar mean_scalar(_mean[0], _mean[1], _mean[2]);
+    cv::Scalar std_scalar(1.0 / _std[0], 1.0 / _std[1], 1.0 / _std[2]);
 
     cv::subtract(dst, mean_scalar, dst);
     cv::multiply(dst, std_scalar, dst);
@@ -77,15 +77,4 @@ cv::Mat Pad(const cv::Mat& src, int top, int left, int bottom, int right, int bo
     cv::Scalar scalar = { val, val, val, val };
     cv::copyMakeBorder(src, dst, top, bottom, left, right, border_type, scalar);
     return dst;
-}
-
-bool Compare(const cv::Mat& src1, const cv::Mat& src2) {
-    cv::Mat _src1, _src2, diff;
-    src1.convertTo(_src1, CV_32FC(src1.channels()));
-    src2.convertTo(_src2, CV_32FC(src2.channels()));
-
-    cv::subtract(_src1, _src2, diff);
-    diff = cv::abs(diff);
-    auto sum = cv::sum(cv::sum(diff));
-    return sum[0] / (src1.rows * src1.cols) < 0.5f;
 }
