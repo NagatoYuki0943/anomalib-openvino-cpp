@@ -56,7 +56,7 @@ public:
         // 1.读取meta
         this->meta = getJson(meta_path);
         // 2.创建模型
-        this->compiled_model = this->get_model(model_path, device);
+        this->get_model(model_path, device);
         // 3.获取模型的输入输出
         this->inputs = this->compiled_model.inputs();
         this->outputs = this->compiled_model.outputs();
@@ -71,7 +71,7 @@ public:
      * @param model_path 模型路径
      * @param device     使用的设备
      */
-    ov::CompiledModel get_model(string& model_path, string& device) const {
+    void get_model(string& model_path, string& device) {
         vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
         vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
 
@@ -111,10 +111,9 @@ public:
 
             // Embed above steps in the graph
             model = ppp.build();
-
         }
         // Step 4. Load the Model to the Device
-        return core.compile_model(model, device);
+        this->compiled_model = core.compile_model(model, device);
     }
 
     /**
