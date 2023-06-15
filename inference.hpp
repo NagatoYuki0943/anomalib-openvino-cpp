@@ -72,15 +72,14 @@ public:
      * @param device     使用的设备
      */
     void get_model(string& model_path, string& device) {
-        vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
-        vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
-
         // Step 1. Initialize OpenVINO Runtime core
         ov::Core core;
         // Step 2. Read a Model from a Drive
         std::shared_ptr<ov::Model> model = core.read_model(model_path);
 
         if (this->openvino_preprocess) {
+            vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
+            vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
             // Step 3. Inizialize Preprocessing for the model
             // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
             // https://blog.csdn.net/sandmangu/article/details/107181289
@@ -90,13 +89,13 @@ public:
             // Specify input image format
             ppp.input(0).tensor()
                 .set_color_format(ov::preprocess::ColorFormat::RGB)     // BGR -> RGB
-                .set_element_type(ov::element::f32)                     // u8 -> f32
+                .set_element_type(ov::element::u8)
                 .set_layout(ov::Layout("HWC"));                         // HWC NHWC NCHW
 
         // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
                 //  .convert_color(ov::preprocess::ColorFormat::RGB)
-                //  .convert_element_type(ov::element::f32)
+                 .convert_element_type(ov::element::f32)
                 .mean(mean)
                 .scale(std);
 
@@ -141,7 +140,6 @@ public:
         cv::Mat resized_image;
         if (this->openvino_preprocess) {
             cv::resize(image, resized_image, { this->meta.infer_size[0], this->meta.infer_size[1] });
-            resized_image.convertTo(resized_image, CV_32FC3, 1.0, 0);
         }
         else {
             resized_image = pre_process(image, meta);
