@@ -2,7 +2,7 @@
 
 > 适用于anomalib导出的openvino格式的模型
 >
-> 测试了 patchcore和fastflow模型
+> 测试了patchcore,fastflow和efficient_ad模型
 
 ```yaml
 # 模型配置文件中设置为openvino,导出openvino会导出onnx
