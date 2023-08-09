@@ -91,15 +91,14 @@ cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
 
 
 cv::Mat cvNormalizeMinMax(cv::Mat& targets, float threshold, float min_val, float max_val) {
-    auto normalized = ((targets - threshold) / (max_val - min_val)) + 0.5;
-    cv::Mat normalized1;
+    cv::Mat normalized = ((targets - threshold) / (max_val - min_val)) + 0.5;
     // normalized = np.clip(normalized, 0, 1) 去除小于0和大于1的
     // 设置上下限: https://blog.csdn.net/simonyucsdy/article/details/106525717
     // 设置上限为1
-    cv::threshold(normalized, normalized1, 1, 1, cv::ThresholdTypes::THRESH_TRUNC);
+    cv::threshold(normalized, normalized, 1, 1, cv::ThresholdTypes::THRESH_TRUNC);
     // 设置下限为0
-    cv::threshold(normalized1, normalized1, 0, 0, cv::ThresholdTypes::THRESH_TOZERO);
-    return normalized1;
+    cv::threshold(normalized, normalized, 0, 0, cv::ThresholdTypes::THRESH_TOZERO);
+    return normalized;
 }
 
 

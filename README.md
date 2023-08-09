@@ -1,14 +1,14 @@
 # 说明
 
 > 适用于anomalib导出的openvino格式的模型
+>
+> 测试了 patchcore和fastflow模型
 
 ```yaml
 # 模型配置文件中设置为openvino,导出openvino会导出onnx
 optimization:
   export_mode: openvino # options: torch, onnx, openvino
 ```
-
-
 
 # 安装openvino
 
@@ -43,8 +43,6 @@ $openvino_path\runtime\3rdparty\tbb\bin
 # 关于include文件夹
 
 > include文件夹是rapidjson的文件，用来解析json
-
-
 
 # Cmake
 
