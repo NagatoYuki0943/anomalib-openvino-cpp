@@ -15,7 +15,7 @@ MetaData getJson(const string& json_path) {
     float pixel_threshold = doc["pixel_threshold"].GetFloat();
     float min = doc["min"].GetFloat();
     float max = doc["max"].GetFloat();
-    // 列表分别取出
+    // 分别取出推理高宽
     int infer_height = doc["transform"]["transform"]["transforms"][0]["height"].GetInt();
     int infer_width = doc["transform"]["transform"]["transforms"][0]["width"].GetInt();
 
@@ -48,7 +48,7 @@ cv::Mat readImage(string& path) {
 }
 
 
-void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_path, string& save_dir) {
+void saveScoreAndImages(float score, cv::Mat image, cv::String& image_path, string& save_dir) {
     // 获取图片文件名
     // 这样基本确保无论使用 \ / 作为分隔符都能找到文件名字
     auto start = image_path.rfind('\\');
@@ -64,15 +64,12 @@ void saveScoreAndImages(float score, vector<cv::Mat>& images, cv::String& image_
     ofs << score;
     ofs.close();
 
-    cv::Mat res;
-    cv::hconcat(images, res);
-
     // 写入图片
-    cv::imwrite(save_dir + "/" + image_name + ".jpg", res);
+    cv::imwrite(save_dir + "/" + image_name + ".jpg", image);
 }
 
 
-cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
+cv::Mat pre_process(cv::Mat& image, MetaData& meta, bool efficient_ad) {
     vector<float> mean = { 0.485, 0.456, 0.406 };
     vector<float> std = { 0.229, 0.224, 0.225 };
 
@@ -84,8 +81,10 @@ cv::Mat pre_process(cv::Mat& image, MetaData& meta) {
     resized_image.convertTo(resized_image, CV_32FC3, 1.0 / 255, 0);
     //cv::normalize(resized_image, resized_image, 0, 1, cv::NormTypes::NORM_MINMAX, CV_32FC3);
 
-    // 标准化
-    resized_image = Normalize(resized_image, mean, std);
+    if (!efficient_ad) {
+        // 标准化
+        resized_image = Normalize(resized_image, mean, std);
+    }
     return resized_image;
 }
 
@@ -145,11 +144,11 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font) {
 
     //背景
     cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10),
-                  cv::Scalar(225, 252, 134), cv::FILLED);
+        cv::Scalar(225, 252, 134), cv::FILLED);
 
     //添加文字
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size,
-                cv::Scalar(0, 0, 0), thickness);
+        cv::Scalar(0, 0, 0), thickness);
 
     return mixed_image;
 }

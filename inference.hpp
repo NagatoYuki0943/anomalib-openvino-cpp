@@ -38,6 +38,7 @@ using namespace std;
 class Inference {
 private:
     bool openvino_preprocess;           // 是否使用openvino图片预处理
+    bool efficient_ad;                      // 是否使用efficient_ad模型
     MetaData meta{};                    // 超参数
     ov::CompiledModel compiled_model;   // 编译好的模型
     ov::InferRequest infer_request;     // 推理请求
@@ -51,12 +52,15 @@ public:
      * @param device        CPU or GPU 推理
      * @param openvino_preprocess   是否使用openvino图片预处理
      */
-    Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess) {
+    Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess, bool efficient_ad = false) {
+        this->efficient_ad = efficient_ad;
         this->openvino_preprocess = openvino_preprocess;
         // 1.读取meta
         this->meta = getJson(meta_path);
+        cout << "meta" << endl;
         // 2.创建模型
         this->get_model(model_path, device);
+        cout << "get_model" << endl;
         // 3.获取模型的输入输出
         this->inputs = this->compiled_model.inputs();
         this->outputs = this->compiled_model.outputs();
@@ -78,8 +82,17 @@ public:
         std::shared_ptr<ov::Model> model = core.read_model(model_path);
 
         if (this->openvino_preprocess) {
-            vector<float> mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
-            vector<float> std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
+            vector<float> mean;
+            vector<float> std;
+            if (!this->efficient_ad) {
+                mean = { 0.485 * 255, 0.456 * 255, 0.406 * 255 };
+                std = { 0.229 * 255, 0.224 * 255, 0.225 * 255 };
+            }
+            else {
+                mean = { 0., 0., 0. };
+                std = { 255., 255., 255. };
+            }
+
             // Step 3. Inizialize Preprocessing for the model
             // https://mp.weixin.qq.com/s/4lkDJC95at2tK_Zd62aJxw
             // https://blog.csdn.net/sandmangu/article/details/107181289
@@ -103,11 +116,10 @@ public:
             ppp.input(0).model().set_layout(ov::Layout("NCHW"));
 
             // Specify output results format
-            ppp.output(0).tensor().set_element_type(ov::element::f32);
-            if (model->outputs().size() == 2) {
-                ppp.output(1).tensor().set_element_type(ov::element::f32);
+            for (size_t i = 0; i < model->outputs().size(); i++) {
+                ppp.output(i).tensor().set_element_type(ov::element::f32);
             }
-
+            
             // Embed above steps in the graph
             model = ppp.build();
         }
@@ -142,7 +154,7 @@ public:
             cv::resize(image, resized_image, { this->meta.infer_size[0], this->meta.infer_size[1] });
         }
         else {
-            resized_image = pre_process(image, meta);
+            resized_image = pre_process(image, meta, this->efficient_ad);
             // [H, W, C] -> [N, C, H, W]
             resized_image = cv::dnn::blobFromImage(resized_image);
         }
@@ -211,10 +223,12 @@ public:
         // 4.保存显示图片
         // 将mask转化为3通道,不然没法拼接图片
         cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
+        // 拼接图片
+        cv::Mat res;
+        cv::hconcat(images, res);
+        saveScoreAndImages(result.score, res, image_path, save_dir);
 
-        saveScoreAndImages(result.score, images, image_path, save_dir);
-
-        return images[2];
+        return res;
     }
 
 
@@ -248,7 +262,10 @@ public:
             // 5.保存图片
             // 将mask转化为3通道,不然没法拼接图片
             cv::applyColorMap(images[0], images[0], cv::ColormapTypes::COLORMAP_JET);
-            saveScoreAndImages(result.score, images, image_path, save_dir);
+            // 拼接图片
+            cv::Mat res;
+            cv::hconcat(images, res);
+            saveScoreAndImages(result.score, res, image_path, save_dir);
         }
 
         // 6.统计数据
