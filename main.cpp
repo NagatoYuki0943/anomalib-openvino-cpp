@@ -11,7 +11,7 @@ int main() {
     string save_dir   = "D:/ml/code/anomalib-openvino-cpp/result"; // 注意目录不会自动创建,要手动创建才会保存
     string device     = "CPU";
     bool openvino_preprocess = true;    // 是否使用openvino图片预处理
-    bool efficient_ad = true;           // 是否使用efficient_ad模型
+    bool efficient_ad = true;           // 是否使用efficient_ad模型 vs2022 debug模式使用efficient_ad模型载入会失败,release模式成功
 
     // 创建推理器
     auto inference = Inference(model_path, meta_path, device, openvino_preprocess, efficient_ad);
