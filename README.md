@@ -87,9 +87,7 @@ $openvino_path\runtime\3rdparty\tbb\bin
 
 # Cmake
 
-> cmake和vs的代码一致，指示引入方式有差别
->
-> cmake版本要设置 `CMakeLists.txt` 中 opencv，openvino的路径为自己的路径
+> 设置 `CMakeLists.txt` 中 opencv，openvino的路径为自己的路径
 
 # 查看是否缺失dll
 
