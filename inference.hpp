@@ -179,6 +179,7 @@ public:
         cv::Mat pred_score;
 
         // 7.针对不同输出数量获取得分
+        // efficient_ad模型有3个输出,不过只有第1个是anomaly_map,其余不用处理
         if (this->outputs.size() == 2) {
             ov::Tensor result2 = this->infer_request.get_output_tensor(1);
             pred_score = cv::Mat(cv::Size(1, 1), CV_32FC1, result2.data<float>());  // {1}
