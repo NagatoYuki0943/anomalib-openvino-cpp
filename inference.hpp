@@ -108,7 +108,7 @@ public:
         // Specify preprocess pipeline to input image without resizing
             ppp.input(0).preprocess()
                 //  .convert_color(ov::preprocess::ColorFormat::RGB)
-                 .convert_element_type(ov::element::f32)
+                .convert_element_type(ov::element::f32)
                 .mean(mean)
                 .scale(std);
 
@@ -119,7 +119,7 @@ public:
             for (size_t i = 0; i < model->outputs().size(); i++) {
                 ppp.output(i).tensor().set_element_type(ov::element::f32);
             }
-            
+
             // Embed above steps in the graph
             model = ppp.build();
         }
@@ -174,8 +174,7 @@ public:
 
         // 6.将热力图转换为Mat
         // result1.data<float>() 返回指针 放入Mat中不能解引用
-        cv::Mat anomaly_map = cv::Mat(cv::Size(this->meta.infer_size[1], this->meta.infer_size[0]),
-            CV_32FC1, result1.data<float>());
+        cv::Mat anomaly_map = cv::Mat(cv::Size(this->meta.infer_size[1], this->meta.infer_size[0]), CV_32FC1, result1.data<float>());
         cv::Mat pred_score;
 
         // 7.针对不同输出数量获取得分
