@@ -149,19 +149,19 @@ public:
         this->meta.image_size[1] = image.size[1];
 
         // 2.图片预处理
-        cv::Mat resized_image;
+        cv::Mat blob;
         if (this->openvino_preprocess) {
-            cv::resize(image, resized_image, { this->meta.infer_size[0], this->meta.infer_size[1] });
+            cv::resize(image, blob, { this->meta.infer_size[0], this->meta.infer_size[1] });
         }
         else {
-            resized_image = pre_process(image, meta, this->efficient_ad);
+            blob = pre_process(image, meta, this->efficient_ad);
             // [H, W, C] -> [N, C, H, W]
-            resized_image = cv::dnn::blobFromImage(resized_image);
+            blob = cv::dnn::blobFromImage(blob);
         }
 
         // 3.从图像创建tensor
         ov::Tensor input_tensor = ov::Tensor(this->compiled_model.input(0).get_element_type(),
-            this->compiled_model.input(0).get_shape(), (float*)resized_image.data);
+            this->compiled_model.input(0).get_shape(), (float*)blob.data);
 
         // 4.推理
         this->infer_request.set_input_tensor(input_tensor);
@@ -230,7 +230,6 @@ public:
 
         return res;
     }
-
 
     /**
      * 多张图片推理
