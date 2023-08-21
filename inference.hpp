@@ -145,8 +145,8 @@ public:
      */
     Result infer(cv::Mat& image) {
         // 1.保存图片原始高宽
-        this->meta.image_size[0] = image.size[0];
-        this->meta.image_size[1] = image.size[1];
+        this->meta.image_size[0] = image.size().height;
+        this->meta.image_size[1] = image.size().width;
 
         // 2.图片预处理
         cv::Mat blob;
@@ -191,9 +191,9 @@ public:
         cout << "pred_score: " << pred_score << endl;   // 4.0252275
 
         // 8.后处理:标准化,缩放到原图
-        vector<cv::Mat> result = post_process(anomaly_map, pred_score, this->meta);
-        anomaly_map = result[0];
-        float score = result[1].at<float>(0, 0);
+        vector<cv::Mat> post_mat = post_process(anomaly_map, pred_score, this->meta);
+        anomaly_map = post_mat[0];
+        float score = post_mat[1].at<float>(0, 0);
 
         // 9.返回结果
         return Result{ anomaly_map, score };
