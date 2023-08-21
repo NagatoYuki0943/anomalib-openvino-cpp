@@ -154,7 +154,7 @@ public:
             cv::resize(image, blob, { this->meta.infer_size[0], this->meta.infer_size[1] });
         }
         else {
-            blob = pre_process(image, meta, this->efficient_ad);
+            blob = pre_process(image, this->meta, this->efficient_ad);
             // [H, W, C] -> [N, C, H, W]
             blob = cv::dnn::blobFromImage(blob);
         }
