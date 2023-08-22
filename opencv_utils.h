@@ -4,6 +4,8 @@
 
 #include "opencv2/opencv.hpp"
 
+using namespace std;
+
 /**
  * @brief resize an image to specified size
  *
@@ -42,8 +44,8 @@ cv::Mat Divide(const cv::Mat& src, float divide=255.0);
  * @param inplace
  * @return cv::Mat
  */
-cv::Mat Normalize(cv::Mat& src, const std::vector<float>& mean,
-                  const std::vector<float>& std, bool to_rgb = false, bool inplace = true);
+cv::Mat Normalize(cv::Mat& src, const vector<float>& mean,
+                  const vector<float>& std, bool to_rgb = false, bool inplace = true);
 
 /**
  * @brief tranpose an image, from {h, w, c} to {c, h, w}
@@ -67,12 +69,3 @@ cv::Mat Transpose(const cv::Mat& src);
  */
 cv::Mat Pad(const cv::Mat& src, int top, int left, int bottom, int right,
             int border_type, float val);
-
-/**
- * @brief compare two images
- *
- * @param src1 one input image
- * @param src2 the other input image
- * @return bool true means the images are the same
- */
-bool Compare(const cv::Mat& src1, const cv::Mat& src2);
