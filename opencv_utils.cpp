@@ -4,7 +4,7 @@
 
 
 cv::Mat Resize(const cv::Mat& src, int dst_height, int dst_width,
-               const std::string& interpolation) {
+               const string& interpolation) {
     cv::Mat dst(dst_height, dst_width, src.type());
     if (interpolation == "bilinear") {
         cv::resize(src, dst, dst.size(), 0, 0, cv::INTER_LINEAR);

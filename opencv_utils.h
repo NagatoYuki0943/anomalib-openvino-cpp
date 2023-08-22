@@ -15,7 +15,7 @@ using namespace std;
  * @return output image if success, error code otherwise
  */
 cv::Mat Resize(const cv::Mat& src, int dst_height, int dst_width,
-               const std::string& interpolation);
+               const string& interpolation);
 
 /**
  * @brief crop an image
