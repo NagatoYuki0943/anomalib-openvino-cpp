@@ -3,7 +3,7 @@
 
 
 int main() {
-    // patchcore模型训练配置文件删除了center_crop
+    // patchcore模型训练配置文件调整center_crop为 `center_crop: null`
     string model_path = "D:/ml/code/anomalib/results/efficient_ad/mvtec/bottle/run/weights/openvino/model.xml";
     string meta_path  = "D:/ml/code/anomalib/results/efficient_ad/mvtec/bottle/run/weights/openvino/metadata.json";
     string image_path = "D:/ml/code/anomalib/datasets/MVTec/bottle/test/broken_large/000.png";
