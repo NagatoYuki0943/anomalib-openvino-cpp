@@ -37,11 +37,11 @@ using namespace std;
 
 class Inference {
 private:
-    bool openvino_preprocess;           // 是否使用openvino图片预处理
-    bool efficient_ad;                      // 是否使用efficient_ad模型
-    MetaData meta{};                    // 超参数
-    ov::CompiledModel compiled_model;   // 编译好的模型
-    ov::InferRequest infer_request;     // 推理请求
+    bool openvino_preprocess;                   // 是否使用openvino图片预处理
+    bool efficient_ad;                          // 是否使用efficient_ad模型
+    MetaData meta{};                            // 超参数
+    ov::CompiledModel compiled_model;           // 编译好的模型
+    ov::InferRequest infer_request;             // 推理请求
     vector<ov::Output<const ov::Node>> inputs;  // 模型的输入列表名称
     vector<ov::Output<const ov::Node>> outputs; // 模型的输出列表名称
 
@@ -57,13 +57,32 @@ public:
         this->openvino_preprocess = openvino_preprocess;
         // 1.读取meta
         this->meta = getJson(meta_path);
-        cout << "meta" << endl;
         // 2.创建模型
         this->get_model(model_path, device);
-        cout << "get_model" << endl;
         // 3.获取模型的输入输出
         this->inputs = this->compiled_model.inputs();
         this->outputs = this->compiled_model.outputs();
+
+        // 打印输入输出形状
+        //dynamic shape model without openvino_preprocess coundn't print input and output shape
+        for (auto input : this->inputs) {
+            cout << "Input: " << input.get_any_name() << ": [ ";
+            for (auto j : input.get_shape()) {
+                cout << j << " ";
+            }
+            cout << "] ";
+            cout << "dtype: " << input.get_element_type() << endl;
+        }
+
+        for (auto output : this->outputs) {
+            cout << "Output: " << output.get_any_name() << ": [ ";
+            for (auto j : output.get_shape()) {
+                cout << j << " ";
+            }
+            cout << "] ";
+            cout << "dtype: " << output.get_element_type() << endl;
+        }
+
         // 4.创建推理请求
         this->infer_request = this->compiled_model.create_infer_request();
         // 5.模型预热
