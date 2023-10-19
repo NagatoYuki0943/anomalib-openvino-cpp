@@ -51,6 +51,7 @@ public:
      * @param meta_path     超参数路径
      * @param device        CPU or GPU 推理
      * @param openvino_preprocess   是否使用openvino图片预处理
+     * @param efficient_ad          是否使用efficient_ad模型
      */
     Inference(string& model_path, string& meta_path, string& device, bool openvino_preprocess, bool efficient_ad = false) {
         this->efficient_ad = efficient_ad;
