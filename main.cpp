@@ -25,6 +25,6 @@ int main() {
     cv::waitKey(0);
 
     // 多张图片推理
-    inference.multi(image_dir, save_dir);
+    // inference.multi(image_dir, save_dir);
     return 0;
 }
